@@ -1137,6 +1137,29 @@ const backend = {
     const lowerUser = username.toLowerCase();
     let email = username;
     
+    if (lowerUser === 'admin') {
+      try {
+        const adminDoc = await db.collection('usernames').doc('admin').get();
+        if (!adminDoc.exists) {
+          const adminEmail = 'admin@boards-reviewer.com';
+          const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, password);
+          const user = userCredential.user;
+          await db.collection('usernames').doc('admin').set({
+            uid: user.uid,
+            email: adminEmail,
+            username: 'Admin'
+          });
+          await db.collection('users').doc(user.uid).set({
+            username: 'Admin',
+            email: adminEmail,
+            joinedRooms: ['GLOBAL']
+          });
+        }
+      } catch (signupErr) {
+        console.error("Admin auto-registration:", signupErr);
+      }
+    }
+    
     try {
       const userDoc = await db.collection('usernames').doc(lowerUser).get();
       if (userDoc.exists) {
