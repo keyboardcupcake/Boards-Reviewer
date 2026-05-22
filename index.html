@@ -1725,11 +1725,24 @@ const backend = {
 
   async addUserToRoom(roomId, targetUser, creatorUsername, sessionToken) {
     const lowerTarget = targetUser.toLowerCase();
-    const mappingDoc = await db.collection('usernames').doc(lowerTarget).get();
-    if (!mappingDoc.exists) return { success: false, msg: "User '" + targetUser + "' not found." };
+    let uid, actualUsername;
     
-    const uid = mappingDoc.data().uid;
-    const actualUsername = mappingDoc.data().username;
+    if (lowerTarget.includes('@')) {
+      const querySnap = await db.collection('usernames').where('email', '==', lowerTarget).get();
+      if (querySnap.empty) {
+        return { success: false, msg: "User with email '" + targetUser + "' not found." };
+      }
+      const matchedDoc = querySnap.docs[0];
+      uid = matchedDoc.data().uid;
+      actualUsername = matchedDoc.data().username;
+    } else {
+      const mappingDoc = await db.collection('usernames').doc(lowerTarget).get();
+      if (!mappingDoc.exists) return { success: false, msg: "User '" + targetUser + "' not found." };
+      uid = mappingDoc.data().uid;
+      actualUsername = mappingDoc.data().username;
+    }
+    
+    const lowerActual = actualUsername.toLowerCase();
     
     const docKey = roomId.toUpperCase();
     const docRef = db.collection('rooms').doc(docKey);
@@ -1748,8 +1761,8 @@ const backend = {
     }
     
     if (!room.permissions) room.permissions = {};
-    if (!room.permissions[lowerTarget]) {
-      room.permissions[lowerTarget] = 'viewer';
+    if (!room.permissions[lowerActual]) {
+      room.permissions[lowerActual] = 'viewer';
       await docRef.update({ permissions: room.permissions });
     }
     
@@ -1819,6 +1832,7 @@ window.google = {
 };
 
 let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessionHistory = []; let currentHistoryIndex = -1; let currentQuestionObj = null; let seenQuestions = {}; 
+  let endlessAnswers = {}; let cloudSyncTimeout = null; let currentRoomListenerUnsubscribe = null; let activityPingInterval = null;
   let sessionScore = 0; let sessionAttempted = 0; let sessionTotalSeconds = 0; 
   let currentUser = ''; let currentUserJoinedRooms = []; let authMode = 'login'; 
   let allRooms = {}; let currentRoomId = localStorage.getItem('psych_current_room') || 'GLOBAL';
@@ -2008,7 +2022,32 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('authModalOverlay').style.display = 'none'; 
     fetchRoomsAndLoadDashboard(); 
   }
-  function logoutUser() { currentUser = ''; isAdmin = false; currentUserJoinedRooms = []; localStorage.removeItem('psych_current_user'); sessionStorage.removeItem('psych_current_user'); localStorage.removeItem('psych_session_token'); document.getElementById('authUsername').value = ''; document.getElementById('authPassword').value = ''; document.getElementById('authConfirmPassword').value = ''; document.getElementById('authEmail').value = ''; document.getElementById('authErrorText').style.display = 'none'; document.getElementById('dashboardView').style.display = 'none'; document.getElementById('mainAppView').style.display = 'none'; openAuthModal(); const closeBtn = document.getElementById('authCloseBtn'); if (closeBtn) closeBtn.style.display = 'none'; }
+  function logoutUser() { 
+    if (currentRoomListenerUnsubscribe) {
+      currentRoomListenerUnsubscribe();
+      currentRoomListenerUnsubscribe = null;
+    }
+    if (activityPingInterval) {
+      clearInterval(activityPingInterval);
+      activityPingInterval = null;
+    }
+    currentUser = ''; 
+    isAdmin = false; 
+    currentUserJoinedRooms = []; 
+    localStorage.removeItem('psych_current_user'); 
+    sessionStorage.removeItem('psych_current_user'); 
+    localStorage.removeItem('psych_session_token'); 
+    document.getElementById('authUsername').value = ''; 
+    document.getElementById('authPassword').value = ''; 
+    document.getElementById('authConfirmPassword').value = ''; 
+    document.getElementById('authEmail').value = ''; 
+    document.getElementById('authErrorText').style.display = 'none'; 
+    document.getElementById('dashboardView').style.display = 'none'; 
+    document.getElementById('mainAppView').style.display = 'none'; 
+    openAuthModal(); 
+    const closeBtn = document.getElementById('authCloseBtn'); 
+    if (closeBtn) closeBtn.style.display = 'none'; 
+  }
   function showForgotPasswordUI() { document.getElementById('authForms').style.display = 'none'; document.getElementById('forgotPasswordForms').style.display = 'block'; document.getElementById('pinRequestSection').style.display = 'block'; document.getElementById('pinSubmitSection').style.display = 'none'; }
   function cancelForgotPassword() { document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authForms').style.display = 'block'; }
   function requestResetPin() { const user = document.getElementById('resetUser').value.trim(); const email = document.getElementById('resetEmail').value.trim(); if(!user || !email) { customAlert("Error", "Please enter both username and email."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { document.getElementById('pinRequestSection').style.display = 'none'; document.getElementById('pinSubmitSection').style.display = 'block'; customAlert("PIN Sent", res.msg); } else { customAlert("Error", res.msg); } }).withFailureHandler(e => { showLoader(false); customAlert("Error", "Failed to communicate with server."); }).sendPasswordResetPin(user, email); }
@@ -2134,6 +2173,13 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function syncToCloud() {
       localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+      if (currentUser && currentUser !== 'Guest' && currentUser.toLowerCase() !== 'admin') {
+          clearTimeout(cloudSyncTimeout);
+          cloudSyncTimeout = setTimeout(() => {
+              const token = localStorage.getItem('psych_session_token') || "";
+              google.script.run.syncUserProgress(currentUser, seenQuestions, token);
+          }, 1000);
+      }
   }
 
   function switchRoomTab(tab) { document.getElementById('tabPublicRooms').className = tab === 'public' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabMyRooms').className = tab === 'my' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabJoinedRooms').className = tab === 'joined' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabJoinRoom').className = tab === 'join' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabCreateRoom').className = tab === 'create' ? 'auth-tab active' : 'auth-tab'; if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').className = tab === 'admin' ? 'auth-tab active' : 'auth-tab'; const listArea = document.getElementById('roomListArea'); const joinArea = document.getElementById('roomJoinArea'); const createArea = document.getElementById('roomCreateArea'); const searchArea = document.getElementById('roomSearchArea'); const adminArea = document.getElementById('roomAdminArea'); listArea.style.display = 'none'; joinArea.style.display = 'none'; createArea.style.display = 'none'; searchArea.style.display = 'none'; if(adminArea) adminArea.style.display = 'none'; if (tab === 'create') { createArea.style.display = 'block'; } else if (tab === 'join') { joinArea.style.display = 'block'; } else if (tab === 'admin') { adminArea.style.display = 'block'; loadAdminData(); } else { listArea.style.display = 'grid'; if(tab === 'public' || tab === 'joined') searchArea.style.display = 'block'; renderRoomList(tab); } }
@@ -2268,6 +2314,53 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('mainAppView').style.display = 'block'; 
     document.getElementById('navDashBtn').style.display = 'inline-block'; 
     switchTab('quizTab'); 
+    
+    // Clean up any existing snapshot listeners and heartbeats
+    if (currentRoomListenerUnsubscribe) {
+      currentRoomListenerUnsubscribe();
+      currentRoomListenerUnsubscribe = null;
+    }
+    if (activityPingInterval) {
+      clearInterval(activityPingInterval);
+      activityPingInterval = null;
+    }
+    
+    // Set up real-time listener on active room document in Firestore
+    if (currentUser && currentUser !== 'Guest') {
+      currentRoomListenerUnsubscribe = db.collection('rooms').doc(roomId.toUpperCase()).onSnapshot(doc => {
+        if (doc.exists) {
+          const roomData = doc.data();
+          const safeUsername = currentUser ? currentUser.toLowerCase() : "";
+          const isOwner = (roomData.creator && roomData.creator.toLowerCase() === safeUsername) || (safeUsername === 'admin');
+          if (!isOwner) delete roomData.password;
+          
+          allRooms[roomId] = roomData;
+          
+          // Instantly re-render active tabs
+          const peopleTab = document.getElementById('peopleTab');
+          if (peopleTab && peopleTab.classList.contains('active')) {
+            renderPeopleTab();
+          }
+          const permissionsTab = document.getElementById('permissionsTab');
+          if (permissionsTab && permissionsTab.classList.contains('active')) {
+            renderPermissionsTab();
+          }
+          
+          // Instantly update categories/subjects list dropdown if changed
+          const newCats = roomData.categories || [];
+          const currentOpts = Array.from(document.getElementById('subjectSelect').options).map(o => o.value);
+          if (JSON.stringify(newCats) !== JSON.stringify(currentOpts)) {
+            populateSubjectDropdown();
+          }
+        }
+      }, err => {
+        console.error("Room Snapshot Listener error:", err);
+      });
+      
+      // Heartbeat pings every 30 seconds
+      activityPingInterval = setInterval(pingActivity, 30000);
+    }
+    
     populateSubjectDropdown(); 
     const subjectSelect = document.getElementById('subjectSelect'); 
     const pinnedDefault = localStorage.getItem('psych_pinned_default_' + currentRoomId);
@@ -2283,7 +2376,20 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     updatePinButtonVisual();
     loadSubjectData(); 
   }
-  function leaveRoomToDashboard() { document.getElementById('mainAppView').style.display = 'none'; document.getElementById('dashboardView').style.display = 'block'; document.getElementById('navDashBtn').style.display = 'none'; switchRoomTab('public'); }
+  function leaveRoomToDashboard() { 
+    if (currentRoomListenerUnsubscribe) {
+      currentRoomListenerUnsubscribe();
+      currentRoomListenerUnsubscribe = null;
+    }
+    if (activityPingInterval) {
+      clearInterval(activityPingInterval);
+      activityPingInterval = null;
+    }
+    document.getElementById('mainAppView').style.display = 'none'; 
+    document.getElementById('dashboardView').style.display = 'block'; 
+    document.getElementById('navDashBtn').style.display = 'none'; 
+    switchRoomTab('public'); 
+  }
   function deleteRoomAction(roomId) { const roomName = allRooms[roomId].name || roomId; customPrompt("Delete Room", `Are you absolutely sure? Type "DELETE" in all caps below to permanently delete '${roomName}' and all its questions.`, "text", (val) => { if (val === "DELETE") { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if (res.success) { allRooms = res.rooms; switchRoomTab('my'); customAlert("Deleted", "Room deleted successfully."); } else { customAlert("Error", res.msg); } }).deleteRoomDB(roomId, currentUser, getSessionToken()); } else if (val !== null) { customAlert("Cancelled", "Room deletion cancelled. You must type 'DELETE' exactly."); } }); }
   function setupEditRoomModal(roomId) { const room = allRooms[roomId]; if(!room) return; document.getElementById('editRoomModalOverlay').setAttribute('data-editing-room', roomId); document.getElementById('editRoomName').value = room.name || roomId; document.getElementById('editQuizTitle').value = room.quizTitle || room.name; document.getElementById('editRoomDesc').value = room.description || ""; const passInput = document.getElementById('editRoomPassword'); const passNote = document.getElementById('editPassNote'); const toggleBtn = document.getElementById('toggleEditPassBtn'); const privacyBtn = document.getElementById('togglePrivacyModalBtn'); passInput.type = 'password'; toggleBtn.innerText = '👁️'; if (room.isPublic) { passInput.value = ""; passInput.disabled = true; passInput.style.opacity = "0.5"; passNote.innerText = "(Room is Public)"; toggleBtn.style.display = 'none'; privacyBtn.innerText = "🔒 Make Private"; privacyBtn.style.color = "var(--text)"; privacyBtn.style.borderColor = "var(--border)"; } else { passInput.value = room.password || ""; passInput.disabled = false; passInput.style.opacity = "1"; passNote.innerText = "(You can overwrite this to change it)"; passNote.style.color = "var(--text-light)"; toggleBtn.style.display = 'block'; privacyBtn.innerText = "🔓 Make Public"; privacyBtn.style.color = "var(--danger)"; privacyBtn.style.borderColor = "var(--danger)"; } document.getElementById('editRoomAllowPrint').checked = (room.allowPrint !== false); document.getElementById('editRoomModalOverlay').style.display = 'flex'; }
   function openEditRoomModal() { if(!hasRoomEditAccess) return; setupEditRoomModal(currentRoomId); }
@@ -2351,18 +2457,19 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       div.setAttribute('draggable', 'true');
       div.setAttribute('data-index', idx);
       
-      const safeCat = cat.replace(/'/g, "\\'");
-      
       div.innerHTML = `
         <div style="display:flex; align-items:center;">
           <span class="drag-handle">☰</span>
           <span style="font-weight: 600; color:var(--text);">${cat} ${idx === 0 ? '<span style="font-size: 10px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: bold;">Default</span>' : ''}</span>
         </div>
         <div style="display:flex; gap: 4px;">
-          <button class="btn-outline btn-small" style="padding: 4px 8px;" onclick="renameCategoryPrompt('${safeCat}')">✏️</button>
-          <button class="btn-danger btn-small" style="padding: 4px 8px;" onclick="removeCategory('${safeCat}')">🗑️</button>
+          <button class="btn-outline btn-small rename-cat-btn" style="padding: 4px 8px;">✏️</button>
+          <button class="btn-danger btn-small remove-cat-btn" style="padding: 4px 8px;">🗑️</button>
         </div>
       `;
+      
+      div.querySelector('.rename-cat-btn').addEventListener('click', () => renameCategoryPrompt(cat));
+      div.querySelector('.remove-cat-btn').addEventListener('click', () => removeCategory(cat));
       
       div.addEventListener('dragstart', (e) => {
         catDragSrcIndex = idx;
@@ -2389,7 +2496,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         e.preventDefault();
         const targetIndex = parseInt(div.getAttribute('data-index'));
         if (catDragSrcIndex !== null && catDragSrcIndex !== targetIndex) {
-          const reorderedCats = [...allRooms[currentRoomId].categories];
+          const reorderedCats = [...(allRooms[currentRoomId].categories || [])];
           const draggedCat = reorderedCats[catDragSrcIndex];
           reorderedCats.splice(catDragSrcIndex, 1);
           reorderedCats.splice(targetIndex, 0, draggedCat);
@@ -2409,10 +2516,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('categoryModalOverlay').style.display = 'flex';
   }
   function closeCategoryModal() { document.getElementById('categoryModalOverlay').style.display = 'none'; }
-  function addNewCategory() { const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } cats.push(newCat); document.getElementById('newCategoryInput').value = ''; saveCategories(cats, newCat + " category added!"); }
-  function removeCategory(catName) { if (allRooms[currentRoomId].categories.length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = allRooms[currentRoomId].categories.filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); }); }
+  function addNewCategory() { const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!"); }
+  function removeCategory(catName) { if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); }); }
   function renameCategoryPrompt(oldName) { customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); }); }
-  function saveCategories(cats, msg) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken()); }
+  function saveCategories(cats, msg) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken()); }
 
   function applyMobileView(isMobile) { const globalHeader = document.getElementById('globalHeaderBar'); const appView = document.getElementById('mainAppView'); const dashView = document.getElementById('dashboardView'); if (isMobile) { if(globalHeader) globalHeader.classList.add('mobile-view'); if(appView) appView.classList.add('mobile-view'); if(dashView) dashView.classList.add('mobile-view'); } else { if(globalHeader) globalHeader.classList.remove('mobile-view'); if(appView) appView.classList.remove('mobile-view'); if(dashView) dashView.classList.remove('mobile-view'); } }
   
@@ -2798,7 +2905,29 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }).loadQuestionsJSON(currentRoomId, subject, currentUser, getSessionToken(), getRoomPassword(currentRoomId)); 
   }
   function getProgressKey() { const mode = document.querySelector('input[name="mode"]:checked').value; const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value; const tag = document.getElementById('tagFilter').value; return `${mode}_${studyOrder}_${tag}`; }
-  function initSubjectMemory(subject) { if(!seenQuestions) seenQuestions = {}; if(!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {}; if(!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {}; const pKey = getProgressKey(); if(!seenQuestions[currentRoomId][subject][pKey]) { seenQuestions[currentRoomId][subject][pKey] = {}; if (currentQuestions && currentQuestions.length > 0) { currentQuestions.forEach(q => { if (seenQuestions[currentRoomId][subject][q.id] && typeof seenQuestions[currentRoomId][subject][q.id] === 'string') { seenQuestions[currentRoomId][subject][pKey][q.id] = seenQuestions[currentRoomId][subject][q.id]; } }); } } if(!seenQuestions[currentRoomId][subject].mistakes) seenQuestions[currentRoomId][subject].mistakes = {}; if(!seenQuestions[currentRoomId][subject].bookmarks) seenQuestions[currentRoomId][subject].bookmarks = []; return pKey; }
+  function initSubjectMemory(subject) { 
+    if(!seenQuestions) seenQuestions = {}; 
+    if(!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {}; 
+    if(!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {}; 
+    const pKey = getProgressKey(); 
+    if(!seenQuestions[currentRoomId][subject][pKey]) { 
+      seenQuestions[currentRoomId][subject][pKey] = {}; 
+      if (currentQuestions && currentQuestions.length > 0) { 
+        currentQuestions.forEach(q => { 
+          if (seenQuestions[currentRoomId][subject][q.id] && typeof seenQuestions[currentRoomId][subject][q.id] === 'string') { 
+            seenQuestions[currentRoomId][subject][pKey][q.id] = seenQuestions[currentRoomId][subject][q.id]; 
+          } 
+        }); 
+      } 
+    } 
+    if(!seenQuestions[currentRoomId][subject].mistakes || typeof seenQuestions[currentRoomId][subject].mistakes !== 'object' || Array.isArray(seenQuestions[currentRoomId][subject].mistakes)) {
+      seenQuestions[currentRoomId][subject].mistakes = {}; 
+    }
+    if(!seenQuestions[currentRoomId][subject].bookmarks || !Array.isArray(seenQuestions[currentRoomId][subject].bookmarks)) {
+      seenQuestions[currentRoomId][subject].bookmarks = []; 
+    }
+    return pKey; 
+  }
   function updateItemNumbers() { const counts = {}; currentQuestions.forEach(q => { const t = q.tag || "Untagged"; if (!counts[t]) counts[t] = 0; counts[t]++; q.displayItemNumber = counts[t]; }); }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
   function populateTagFilters() { const filterQuiz = document.getElementById('tagFilter'); const filterBank = document.getElementById('bankTagFilter'); const currQuiz = filterQuiz.value; const currBank = filterBank.value; filterQuiz.innerHTML = '<option value="ALL">All Groups Combined</option>'; filterBank.innerHTML = '<option value="ALL">Filter: All Groups</option>'; const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean); uniqueTags.forEach(tag => { filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`; filterBank.innerHTML += `<option value="${tag}">${tag}</option>`; }); if(uniqueTags.includes(currQuiz)) filterQuiz.value = currQuiz; if(uniqueTags.includes(currBank)) filterBank.value = currBank; }
@@ -2939,12 +3068,83 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function toggleStatsVisibility() { const showScore = document.getElementById('showScoreToggle').checked; const showTimer = document.getElementById('showTimerToggle').checked; const showRemaining = document.getElementById('showRemainingToggle').checked; const mode = document.querySelector('input[name="mode"]:checked').value; document.getElementById('scoreWrapper').style.display = showScore ? 'block' : 'none'; document.getElementById('timerWrapper').style.display = showTimer ? 'block' : 'none'; const isRemainingVisible = showRemaining && (mode === 'session'); document.getElementById('remainingWrapper').style.display = isRemainingVisible ? 'block' : 'none'; if (!showScore && !showTimer && !isRemainingVisible) { document.getElementById('statsBar').style.display = 'none'; } else { document.getElementById('statsBar').style.display = 'flex'; } }
   function toggleModeSettings() { const mode = document.querySelector('input[name="mode"]:checked').value; const optionsDiv = document.getElementById('studyModeOptions'); if (mode !== 'session') { optionsDiv.style.opacity = '0.4'; optionsDiv.style.pointerEvents = 'none'; } else { optionsDiv.style.opacity = '1'; optionsDiv.style.pointerEvents = 'auto'; } handleTagSwitch(); }
   function buildQueue() { const subjectSelect = document.getElementById('subjectSelect'); if(!subjectSelect || !subjectSelect.value) return; const subject = subjectSelect.value; const pKey = initSubjectMemory(subject); const mode = document.querySelector('input[name="mode"]:checked').value; const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value; const selectedTag = document.getElementById('tagFilter').value; filteredQs = currentQuestions; if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag); if (mode === 'mistakes') { filteredQs = filteredQs.filter(q => seenQuestions[currentRoomId][subject].mistakes && seenQuestions[currentRoomId][subject].mistakes[q.id] === true); } let baseQueue = []; if (mode === 'session') { baseQueue = filteredQs.filter(q => !seenQuestions[currentRoomId][subject][pKey][q.id]).map(q => q.id); } else { baseQueue = filteredQs.map(q => q.id); } if (studyOrder === 'random' && mode !== 'mistakes') { let groups = {}; let standalone = []; baseQueue.forEach(id => { let q = filteredQs.find(x => x.id === id); if (q && q.linkGroup && q.linkGroup.trim() !== '') { if (!groups[q.linkGroup]) groups[q.linkGroup] = []; groups[q.linkGroup].push(id); } else { standalone.push([id]); } }); let allGroups = Object.values(groups).concat(standalone); for (let i = allGroups.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allGroups[i], allGroups[j]] = [allGroups[j], allGroups[i]]; } pendingQueue = []; allGroups.forEach(g => { g.sort((a,b) => { let qa = filteredQs.find(x => x.id === a); let qb = filteredQs.find(x => x.id === b); return qa.displayItemNumber - qb.displayItemNumber; }); pendingQueue.push(...g); }); } else { pendingQueue = baseQueue.sort((a,b) => { let qa = filteredQs.find(x => x.id === a); let qb = filteredQs.find(x => x.id === b); if (qa.tag !== qb.tag) { return (qa.tag || "").localeCompare(qb.tag || ""); } return qa.displayItemNumber - qb.displayItemNumber; }); } }
-  function restartSession() { customConfirm("Reset Group Progress", "Are you sure you want to reset your score and progress for this group and mode?", () => { const subject = document.getElementById('subjectSelect').value; const pKey = initSubjectMemory(subject); seenQuestions[currentRoomId][subject][pKey] = {}; clearSessionState(); syncToCloud(); handleTagSwitch(); customAlert("Progress Reset", "Score and progress have been reset."); }); }
-  function resetAllGroups() { customConfirm("Reset All Progress", "Are you sure you want to reset ALL progress for this subject?", () => { const subject = document.getElementById('subjectSelect').value; const b = seenQuestions[currentRoomId][subject].bookmarks || []; const m = seenQuestions[currentRoomId][subject].mistakes || {}; seenQuestions[currentRoomId][subject] = { bookmarks: b, mistakes: m }; Object.keys(localStorage).forEach(key => { if (key.startsWith(`psych_state_${currentRoomId}_${subject}`)) localStorage.removeItem(key); }); syncToCloud(); handleTagSwitch(); customAlert("Progress Reset", "All score and progress for this subject have been reset. Your pins and mistake history were kept safe."); }); }
+  function restartSession() { 
+    customConfirm("Reset Group Progress", "Are you sure you want to reset your score and progress for this group and mode?", () => { 
+      const subject = document.getElementById('subjectSelect').value; 
+      const pKey = initSubjectMemory(subject); 
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      if (mode === 'mistakes') {
+        seenQuestions[currentRoomId][subject].mistakes = {};
+      } else {
+        seenQuestions[currentRoomId][subject][pKey] = {}; 
+      }
+      endlessAnswers = {};
+      clearSessionState(); 
+      syncToCloud(); 
+      handleTagSwitch(); 
+      customAlert("Progress Reset", "Score and progress have been reset."); 
+    }); 
+  }
+  function resetAllGroups() { 
+    customConfirm("Reset All Progress", "Are you sure you want to reset ALL progress for this subject?", () => { 
+      const subject = document.getElementById('subjectSelect').value; 
+      const b = seenQuestions[currentRoomId][subject].bookmarks || []; 
+      seenQuestions[currentRoomId][subject] = { bookmarks: b, mistakes: {} }; 
+      endlessAnswers = {};
+      Object.keys(localStorage).forEach(key => { 
+        if (key.startsWith(`psych_state_${currentRoomId}_${subject}`)) localStorage.removeItem(key); 
+      }); 
+      syncToCloud(); 
+      handleTagSwitch(); 
+      customAlert("Progress Reset", "All score and progress for this subject have been reset. Your pins were kept safe."); 
+    }); 
+  }
 
   function enterImmersiveMode() { document.body.classList.add('immersive-mode'); document.getElementById('exitImmersiveBtn').style.display = 'block'; document.getElementById('quizSettingsArea').style.display = 'none'; document.getElementById('quizArea').style.display = 'block'; }
   function exitImmersiveMode() { document.body.classList.remove('immersive-mode'); document.getElementById('exitImmersiveBtn').style.display = 'none'; document.getElementById('quizArea').style.display = 'none'; document.getElementById('quizSettingsArea').style.display = 'block'; }
-  function startSession() { if(currentQuestions.length === 0) { customAlert("Empty Bank", "No questions found! Add them in the 'Add Questions' tab."); return; } if(filteredQs.length === 0) { customAlert("Empty Group", "No questions found matching your selected filters."); return; } if(!currentQuestionObj && currentHistoryIndex !== -1) { handleTagSwitch(); } if (currentHistoryIndex === -1) { const subject = document.getElementById('subjectSelect').value; const pKey = initSubjectMemory(subject); const mode = document.querySelector('input[name="mode"]:checked').value; let isFinished = false; if (mode === 'session') { const unanswered = filteredQs.filter(q => !seenQuestions[currentRoomId][subject][pKey][q.id]); if (unanswered.length === 0) isFinished = true; } if (isFinished) { sessionHistory = [...filteredQs].sort((a,b) => { if (a.tag !== b.tag) return (a.tag || "").localeCompare(b.tag || ""); return a.displayItemNumber - b.displayItemNumber; }).map(q => q.id); pendingQueue = []; currentHistoryIndex = 0; currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[0]); saveSessionState(); enterImmersiveMode(); renderQuestion(); customAlert("Review Mode", "You've finished this set! You are now in Review Mode. Use Next/Back buttons to review."); } else { enterImmersiveMode(); generateNextQuestion(); } } else { enterImmersiveMode(); renderQuestion(); } }
+  function startSession() { 
+    if(currentQuestions.length === 0) { 
+      customAlert("Empty Bank", "No questions found! Add them in the 'Add Questions' tab."); 
+      return; 
+    } 
+    if(filteredQs.length === 0) { 
+      customAlert("Empty Group", "No questions found matching your selected filters."); 
+      return; 
+    } 
+    if(!currentQuestionObj && currentHistoryIndex !== -1) { 
+      handleTagSwitch(); 
+    } 
+    if (currentHistoryIndex === -1) { 
+      endlessAnswers = {};
+      const subject = document.getElementById('subjectSelect').value; 
+      const pKey = initSubjectMemory(subject); 
+      const mode = document.querySelector('input[name="mode"]:checked').value; 
+      let isFinished = false; 
+      if (mode === 'session') { 
+        const unanswered = filteredQs.filter(q => !seenQuestions[currentRoomId][subject][pKey][q.id]); 
+        if (unanswered.length === 0) isFinished = true; 
+      } 
+      if (isFinished) { 
+        sessionHistory = [...filteredQs].sort((a,b) => { 
+          if (a.tag !== b.tag) return (a.tag || "").localeCompare(b.tag || ""); 
+          return a.displayItemNumber - b.displayItemNumber; 
+        }).map(q => q.id); 
+        pendingQueue = []; 
+        currentHistoryIndex = 0; 
+        currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[0]); 
+        saveSessionState(); 
+        enterImmersiveMode(); 
+        renderQuestion(); 
+        customAlert("Review Mode", "You've finished this set! You are now in Review Mode. Use Next/Back buttons to review."); 
+      } else { 
+        enterImmersiveMode(); 
+        generateNextQuestion(); 
+      } 
+    } else { 
+      enterImmersiveMode(); 
+      renderQuestion(); 
+    } 
+  }
   function generateNextQuestion() { const mode = document.querySelector('input[name="mode"]:checked').value; if (mode !== 'session' && pendingQueue.length === 0) buildQueue(); if(pendingQueue.length === 0) { exitImmersiveMode(); customAlert("Quiz Complete 🎉", `You've finished this set!\n\nFinal Score: ${sessionScore} / ${sessionAttempted}\n\nClick 'Start Quiz / Resume Session' to enter Review Mode, or click Reset Progress to restart.`); return; } const nextId = pendingQueue.shift(); goToQuestion(nextId); }
   function goToQuestion(id) { if (currentHistoryIndex < sessionHistory.length - 1) { sessionHistory = sessionHistory.slice(0, currentHistoryIndex + 1); } pendingQueue = pendingQueue.filter(pid => pid !== id); sessionHistory.push(id); currentHistoryIndex++; currentQuestionObj = filteredQs.find(q => q.id === id); saveSessionState(); renderQuestion(); }
   function goForward() { if (currentHistoryIndex < sessionHistory.length - 1) { currentHistoryIndex++; currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]); saveSessionState(); renderQuestion(); } else { generateNextQuestion(); } }
@@ -2954,6 +3154,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function toggleBookmark() { 
     const subject = document.getElementById('subjectSelect').value; 
     initSubjectMemory(subject); 
+    if(!seenQuestions[currentRoomId] || !seenQuestions[currentRoomId][subject]) return;
+    if(!seenQuestions[currentRoomId][subject].bookmarks || !Array.isArray(seenQuestions[currentRoomId][subject].bookmarks)) {
+      seenQuestions[currentRoomId][subject].bookmarks = [];
+    }
     const isBookmarked = seenQuestions[currentRoomId][subject].bookmarks.includes(currentQuestionObj.id); 
     const btn = document.getElementById('bookmarkBtn');
     if (isBookmarked) { 
@@ -3029,8 +3233,25 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function closeNavigator() { document.getElementById('navigatorModalOverlay').style.display = 'none'; }
   
   function renderPinned() { const container = document.getElementById('pinnedContainer'); container.innerHTML = ''; const subject = document.getElementById('subjectSelect').value; if (!subject || !seenQuestions[currentRoomId] || !seenQuestions[currentRoomId][subject]) return; const pinnedIds = seenQuestions[currentRoomId][subject].bookmarks || []; if (pinnedIds.length === 0) { container.innerHTML = '<p style="text-align:center; color:var(--text-light);">No pinned questions yet. Click the ⭐ during a quiz to save questions here!</p>'; return; } const pinnedQs = currentQuestions.filter(q => pinnedIds.includes(q.id)); pinnedQs.forEach(q => { const div = document.createElement('div'); div.className = 'bank-card'; let readOnlyOptHTML = q.options.map(o => { const isCorrect = o.letter === q.correct; const style = isCorrect ? 'color:var(--success); font-weight:bold;' : 'color:var(--text);'; return `<div style="font-size:14px; margin-top: 8px; ${style}"><b>${o.letter.toUpperCase()})</b> ${formatText(o.text)} ${isCorrect ? '✓' : ''}</div>`; }).join(''); let imgHtml = q.imageUrl ? `<img src="${fixDriveLink(q.imageUrl)}" style="max-width:200px; border-radius:4px; margin-bottom:10px; display:block;">` : ''; let ratImgHtml = q.rationaleImageUrl ? `<img src="${fixDriveLink(q.rationaleImageUrl)}" style="max-width:200px; border-radius:4px; margin-top:10px; display:block;">` : ''; let linkBadge = q.linkGroup ? `<span style="background:var(--surface-alt); color:var(--text); padding:4px 8px; border-radius:6px; font-size:10px; margin-left:10px; border:1px solid var(--border);">🔗 Linked: ${q.linkGroup}</span>` : ''; let contentHTML = `<div style="width: 100%;"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;"><div><span class="q-tag" style="cursor:default; box-shadow:none; margin:0;">${q.tag}</span>${linkBadge}</div><button class="btn-outline btn-small" onclick="removePinFromTab('${q.id}')">❌ Unpin</button></div>${imgHtml}<div style="font-weight:600; font-size:16px; margin-bottom:12px; line-height: 1.5;">${q.displayItemNumber}. ${formatText(q.text)}</div>${readOnlyOptHTML}</div>`; let actionsHTML = `<div class="bank-ans-box">${q.rationale ? `<div style="font-size:13px; color:var(--text-light); line-height: 1.5;"><b>Rationalization:</b><br>${formatText(q.rationale)}</div>` : "<span style='color:var(--text-light); font-size:13px;'>No rationalization provided.</span>"}${ratImgHtml}</div>`; div.innerHTML = `<div class="bank-header">${contentHTML}</div>${actionsHTML}`; container.appendChild(div); }); }
-  function removePinFromTab(id) { const subject = document.getElementById('subjectSelect').value; seenQuestions[currentRoomId][subject].bookmarks = seenQuestions[currentRoomId][subject].bookmarks.filter(b => b !== id); syncToCloud(); renderPinned(); }
-  function clearAllPins() { customConfirm("Clear Pins", "Are you sure you want to remove all pinned questions for this subject?", () => { const subject = document.getElementById('subjectSelect').value; seenQuestions[currentRoomId][subject].bookmarks = []; syncToCloud(); renderPinned(); }); }
+  function removePinFromTab(id) { 
+    const subject = document.getElementById('subjectSelect').value; 
+    if (!subject || !seenQuestions[currentRoomId] || !seenQuestions[currentRoomId][subject]) return;
+    if (!seenQuestions[currentRoomId][subject].bookmarks || !Array.isArray(seenQuestions[currentRoomId][subject].bookmarks)) {
+      seenQuestions[currentRoomId][subject].bookmarks = [];
+    }
+    seenQuestions[currentRoomId][subject].bookmarks = seenQuestions[currentRoomId][subject].bookmarks.filter(b => b !== id); 
+    syncToCloud(); 
+    renderPinned(); 
+  }
+  function clearAllPins() { 
+    customConfirm("Clear Pins", "Are you sure you want to remove all pinned questions for this subject?", () => { 
+      const subject = document.getElementById('subjectSelect').value; 
+      if (!subject || !seenQuestions[currentRoomId] || !seenQuestions[currentRoomId][subject]) return;
+      seenQuestions[currentRoomId][subject].bookmarks = []; 
+      syncToCloud(); 
+      renderPinned(); 
+    }); 
+  }
 
   function populateAddTagFilters() { const addTagSelect = document.getElementById('addTagSelect'); if(!addTagSelect) return; addTagSelect.innerHTML = ''; const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean); uniqueTags.forEach(tag => { addTagSelect.innerHTML += `<option value="${tag}">${tag}</option>`; }); addTagSelect.innerHTML += `<option value="__NEW__">+ Create New Tag</option>`; handleNewTagSelect(); }
   function handleNewTagSelect() { const select = document.getElementById('addTagSelect'); const input = document.getElementById('addTagNewInput'); input.style.display = (select.value === '__NEW__') ? 'block' : 'none'; }
@@ -3835,6 +4056,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       } else {
         customAlert("Error", res.msg);
       }
+    }).withFailureHandler(err => {
+      showLoader(false);
+      customAlert("Error", "Failed to update permission.");
     }).setUserPermission(currentRoomId, targetUser, role, currentUser, getSessionToken());
   }
 
@@ -3861,7 +4085,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const input = document.getElementById('addPermissionUsername');
     const targetUser = input.value.trim();
     if (!targetUser) {
-      customAlert("Wait", "Please enter a username.");
+      customAlert("Wait", "Please enter a username or email.");
       return;
     }
     showLoader(true);
@@ -3875,6 +4099,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       } else {
         customAlert("Error", res.msg);
       }
+    }).withFailureHandler(err => {
+      showLoader(false);
+      customAlert("Error", "Failed to add user to room.");
     }).addUserToRoom(currentRoomId, targetUser, currentUser, getSessionToken());
   }
 
