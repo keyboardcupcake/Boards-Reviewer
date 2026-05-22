@@ -86,6 +86,27 @@
     .quiz-actions-grid button { width: 100%; }
     .quiz-actions-grid button.full-width { grid-column: span 2; }
 
+    /* Modern Responsive Layout Helpers */
+    .q-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+    .q-link-badge {
+      background: var(--surface-alt);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      margin-left: 10px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      font-weight: 600;
+    }
+
     @media (max-width: 600px) {
       body { padding: 10px !important; }
       .container { padding: 15px 10px !important; border-radius: 12px !important; }
@@ -107,6 +128,71 @@
       .settings-buttons-grid { grid-template-columns: 1fr !important; }
       .quiz-actions-grid { grid-template-columns: 1fr !important; }
       .quiz-actions-grid button.full-width { grid-column: span 1 !important; }
+      
+      /* Mobile Subject Selector and Buttons */
+      select {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+      }
+      #pinDefaultCategoryBtn, #editCategoriesBtn {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        height: 38px !important;
+      }
+
+      /* Mobile Quiz View Elements Overlap Prevention */
+      .q-header-row {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+      }
+      .q-tag {
+        font-size: 11px !important;
+        padding: 6px 10px !important;
+        display: inline-flex !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+      }
+      .q-link-badge {
+        margin-left: 0 !important;
+        margin-top: 4px !important;
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+      .bookmark-btn {
+        width: 36px !important;
+        height: 36px !important;
+      }
+      .bookmark-btn svg {
+        width: 18px !important;
+        height: 18px !important;
+      }
+      .bookmark-btn:hover {
+        transform: scale(1.1) rotate(15deg) !important;
+      }
+
+      /* Mobile Stats Bar Wrap Prevention */
+      .stats-bar {
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        margin-bottom: 15px !important;
+        gap: 4px !important;
+        justify-content: space-between !important;
+      }
+      .stats-bar div {
+        flex: 1;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .stats-bar #scoreWrapper {
+        text-align: left;
+      }
+      .stats-bar #remainingWrapper {
+        text-align: right;
+      }
+      .stats-bar #timerWrapper {
+        font-size: 13px !important;
+        text-align: center;
+      }
       
       /* Mobile Bank Controls */
       .bank-controls {
@@ -666,7 +752,7 @@
     <div id="quizArea" style="display: none;">
       <button id="exitImmersiveBtn" onclick="exitImmersiveMode()">⬅ Pause & Exit Quiz</button>
       <div class="stats-bar" id="statsBar"><div id="scoreWrapper">Score: <span id="scoreVal">0</span> / <span id="attemptedVal">0</span></div><div id="timerWrapper" style="font-family: monospace; font-size: 18px; font-weight: 800;">⏱ <span id="qTimerDisplay">00:00</span></div><div id="remainingWrapper">Remaining: <span id="remainingVal">?</span></div></div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+      <div class="q-header-row">
           <div class="q-tag" id="qTagDisplay" onclick="openNavigator()" title="Click to view all questions in this group" style="margin:0;">PT 1 - ITEM 1 <span style="font-size:14px; opacity:0.8; margin-left:4px;">▾</span></div>
           <button id="bookmarkBtn" class="bookmark-btn" onclick="toggleBookmark()" title="Pin/Star Question">
             <svg viewBox="0 0 24 24">
@@ -790,6 +876,12 @@ Here are my questions to format:
             </div>
           </div>
           <label>Raw Question Text <span style="color:var(--danger)">*</span></label><div class="editor-toolbar" style="border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0;"><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('bold')" title="Bold"><b>B</b></button><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('italic')" title="Italic"><i>I</i></button><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('underline')" title="Underline"><u>U</u></button><div style="width:1px; background:var(--border); margin:0 5px;"></div><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('justifyLeft')" title="Align Left">Left</button><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('justifyCenter')" title="Align Center">Center</button><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('justifyRight')" title="Align Right">Right</button><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('justifyFull')" title="Justify">Justify</button><div style="width:1px; background:var(--border); margin:0 5px;"></div><button class="editor-btn" onclick="document.getElementById('rawInput').focus(); execCmd('insertUnorderedList')" title="Bullet List">• List</button></div><div id="rawInput" class="editor-content" contenteditable="true" style="height: 250px; margin-bottom: 15px; border-radius: 0 0 8px 8px; border: 1px solid var(--border);"></div><label>Answer Key (Sequential) <span style="color:var(--danger)">*</span></label><textarea id="keyInput" style="height: 60px; margin-bottom: 15px;" placeholder="e.g., 1:a, 2:b, 3:c..."></textarea><button onclick="parseAndAdd()">Parse & Add Bulk</button>
+          <div style="margin-top: 25px; border-top: 1px dashed var(--border); padding-top: 20px; text-align: center;">
+            <label style="justify-content: center; margin-bottom: 8px;"><b>📁 Or Import from Legacy JSON File</b></label>
+            <p style="font-size: 12px; color: var(--text-light); margin-top: 0; margin-bottom: 12px;">Select a question bank JSON file exported from your Google Drive/Apps Script database.</p>
+            <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJsonImport(this.files[0])">
+            <button class="btn-outline btn-small" style="width: auto; font-weight: 600;" onclick="document.getElementById('jsonFileInput').click()">📁 Select JSON File to Import</button>
+          </div>
       </div>
       <p id="addStatus" style="color: var(--success); font-weight: 600; text-align: center; margin-top: 10px;"></p>
     </div>
@@ -1824,10 +1916,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         }
         showLoader(false); 
         finalizeDashboardLoad(); 
-      } 
+      }
     }).withFailureHandler(err => { 
       showLoader(false); 
-      customAlert("Error", "Failed to connect to server."); 
+      customAlert("Connection Error", "Failed to connect to server: " + (err ? err.message || err : "Unknown Error")); 
     }).getRoomsData(currentUser, getSessionToken()); 
   }
   function finalizeDashboardLoad() { if(document.getElementById('dashboardView')) document.getElementById('dashboardView').style.display = 'block'; if(document.getElementById('mainAppView')) document.getElementById('mainAppView').style.display = 'none'; if(document.getElementById('navDashBtn')) document.getElementById('navDashBtn').style.display = 'none'; document.getElementById('topBarUsername').innerText = currentUser || 'Guest'; const restrictedTabs = ['tabMyRooms', 'tabCreateRoom']; restrictedTabs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (currentUser === 'Guest') ? 'none' : ''; }); if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none'; switchRoomTab('public'); }
@@ -1836,7 +1928,64 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function closeAuthModal() { if(currentUser) document.getElementById('authModalOverlay').style.display = 'none'; }
   function switchAuthTab(mode) { authMode = mode; document.getElementById('authErrorText').style.display = 'none'; document.getElementById('tabLogin').className = mode === 'login' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabSignup').className = mode === 'signup' ? 'auth-tab active' : 'auth-tab'; document.getElementById('authActionBtn').innerText = mode === 'login' ? 'Log In' : 'Sign Up'; document.getElementById('emailWrapper').style.display = mode === 'signup' ? 'block' : 'none'; document.getElementById('confirmPassWrapper').style.display = mode === 'signup' ? 'block' : 'none'; document.getElementById('forgotPassText').style.display = mode === 'login' ? 'block' : 'none'; document.getElementById('authUsername').value = ''; document.getElementById('authPassword').value = ''; document.getElementById('authConfirmPassword').value = ''; document.getElementById('authEmail').value = ''; }
   function togglePasswords(show) { const type = show ? "text" : "password"; document.getElementById('authPassword').type = type; document.getElementById('authConfirmPassword').type = type; }
-  function submitAuth() { const user = document.getElementById('authUsername').value.trim(); const pass = document.getElementById('authPassword').value.trim(); const email = document.getElementById('authEmail').value.trim(); const confirmPass = document.getElementById('authConfirmPassword').value.trim(); const errEl = document.getElementById('authErrorText'); errEl.style.display = 'none'; if(!user || !pass) { errEl.innerText = "Please enter both username and password."; errEl.style.display = 'block'; return; } showLoader(true); if (authMode === 'signup') { if(pass !== confirmPass) { showLoader(false); errEl.innerText = "Passwords do not match."; errEl.style.display = 'block'; return; } if(!email) { showLoader(false); errEl.innerText = "Please provide an email for account recovery."; errEl.style.display = 'block'; return; } google.script.run.withSuccessHandler(res => { showLoader(false); if (res.success) { finishLogin(user, res.progress, res.joinedRooms, res.sessionToken); customAlert("Welcome!", "Account created. Progress will auto-sync to the cloud."); } else { errEl.innerText = res.msg; errEl.style.display = 'block'; } }).withFailureHandler(err => { showLoader(false); errEl.innerText = "Failed to connect to server."; errEl.style.display = 'block'; }).registerUser(user, pass, email); } else { google.script.run.withSuccessHandler(res => { showLoader(false); if (res.success) { finishLogin(user, res.progress, res.joinedRooms, res.sessionToken); } else { errEl.innerText = res.msg; errEl.style.display = 'block'; } }).withFailureHandler(err => { showLoader(false); errEl.innerText = "Failed to connect to server."; errEl.style.display = 'block'; }).loginUser(user, pass); } }
+  function submitAuth() {
+    const user = document.getElementById('authUsername').value.trim();
+    const pass = document.getElementById('authPassword').value.trim();
+    const email = document.getElementById('authEmail').value.trim();
+    const confirmPass = document.getElementById('authConfirmPassword').value.trim();
+    const errEl = document.getElementById('authErrorText');
+    errEl.style.display = 'none';
+    
+    if(!user || !pass) {
+      errEl.innerText = "Please enter both username and password.";
+      errEl.style.display = 'block';
+      return;
+    }
+    
+    showLoader(true);
+    if (authMode === 'signup') {
+      if(pass !== confirmPass) {
+        showLoader(false);
+        errEl.innerText = "Passwords do not match.";
+        errEl.style.display = 'block';
+        return;
+      }
+      if(!email) {
+        showLoader(false);
+        errEl.innerText = "Please provide an email for account recovery.";
+        errEl.style.display = 'block';
+        return;
+      }
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        if (res.success) {
+          finishLogin(user, res.progress, res.joinedRooms, res.sessionToken);
+          customAlert("Welcome!", "Account created. Progress will auto-sync to the cloud.");
+        } else {
+          errEl.innerText = res.msg;
+          errEl.style.display = 'block';
+        }
+      }).withFailureHandler(err => {
+        showLoader(false);
+        errEl.innerText = "Failed to connect to server: " + (err ? err.message || err : "Unknown Error");
+        errEl.style.display = 'block';
+      }).registerUser(user, pass, email);
+    } else {
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        if (res.success) {
+          finishLogin(user, res.progress, res.joinedRooms, res.sessionToken);
+        } else {
+          errEl.innerText = res.msg;
+          errEl.style.display = 'block';
+        }
+      }).withFailureHandler(err => {
+        showLoader(false);
+        errEl.innerText = "Failed to connect to server: " + (err ? err.message || err : "Unknown Error");
+        errEl.style.display = 'block';
+      }).loginUser(user, pass);
+    }
+  }
   function finishLogin(username, cloudProgress, joinedRooms, sessionToken) { 
     currentUser = username; 
     isAdmin = (username.toLowerCase() === 'admin'); 
@@ -2824,7 +2973,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const mode = document.querySelector('input[name="mode"]:checked').value; 
     const answeredValue = mode === 'session' ? seenQuestions[currentRoomId][subject][pKey][currentQuestionObj.id] : endlessAnswers[currentQuestionObj.id]; 
     const tagDisplay = currentQuestionObj.tag && currentQuestionObj.tag !== "Untagged" ? `${currentQuestionObj.tag} - ITEM ${currentQuestionObj.displayItemNumber}` : `ITEM ${currentQuestionObj.displayItemNumber}`; 
-    const linkBadge = currentQuestionObj.linkGroup ? `<span style="background:var(--surface-alt); color:var(--text); padding:4px 8px; border-radius:6px; font-size:10px; margin-left:10px; border:1px solid var(--border);">🔗 Linked: ${currentQuestionObj.linkGroup}</span>` : ''; 
+    const linkBadge = currentQuestionObj.linkGroup ? `<span class="q-link-badge">🔗 Linked: ${currentQuestionObj.linkGroup}</span>` : ''; 
     document.getElementById('qTagDisplay').innerHTML = `${tagDisplay} <span style="font-size:14px; opacity:0.8; margin-left:4px;">▾</span> ${linkBadge}`; 
     let imgHtml = ""; 
     if (currentQuestionObj.imageUrl) { 
@@ -2952,6 +3101,52 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       document.getElementById('keyInput').value = "";
       setTimeout(() => document.getElementById('addStatus').innerText = "", 3000);
     });
+  }
+
+  async function handleJsonImport(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported)) {
+          customAlert("Import Error", "The JSON file must contain an array of questions.");
+          return;
+        }
+        const normalized = imported.map((q, idx) => ({
+          id: q.id || ("q_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5)),
+          text: q.text || "",
+          options: Array.isArray(q.options) ? q.options.map(o => ({
+            letter: (o.letter || "").toLowerCase(),
+            text: o.text || ""
+          })) : [],
+          correct: (q.correct || "").toLowerCase(),
+          rationale: q.rationale || "",
+          imageUrl: q.imageUrl || "",
+          rationaleImageUrl: q.rationaleImageUrl || "",
+          linkGroup: q.linkGroup || "",
+          tag: q.tag || "General",
+          displayItemNumber: q.displayItemNumber || (idx + 1)
+        }));
+        customConfirm("Import JSON File", `Are you sure you want to import ${normalized.length} questions? This will replace the existing questions in this category.`, async () => {
+          showLoader(true);
+          const subject = document.getElementById('subjectSelect').value;
+          try {
+            await backend.saveQuestionsJSON(currentRoomId, subject, normalized, currentUser, getSessionToken());
+            showLoader(false);
+            customAlert("Success", normalized.length + " questions imported successfully!");
+            loadSubjectData();
+          } catch (err) {
+            showLoader(false);
+            console.error(err);
+            customAlert("Error", "Failed to save questions to database: " + err.message);
+          }
+        });
+      } catch (err) {
+        customAlert("Parsing Error", "Failed to parse JSON file: " + err.message);
+      }
+    };
+    reader.readAsText(file);
   }
 
   function parseRawText(rawText, answerKeyString, tagText) {
