@@ -1,0 +1,817 @@
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index').setTitle('Boards Reviewer').addMetaTag('viewport', 'width=device-width, initial-scale=1').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getStorageKey(roomId, subject) { return (roomId.toUpperCase() === 'GLOBAL') ? subject + '_json' : roomId.toUpperCase() + '_' + subject + '_json'; }
+function getDbFolder() { var f = DriveApp.getFoldersByName("PsychReviewer_DB"); if (f.hasNext()) return f.next(); return DriveApp.createFolder("PsychReviewer_DB"); }
+
+function _getRawRoomsData() {
+  var props = PropertiesService.getScriptProperties(); var roomsStr = props.getProperty('rooms_db'); var rooms = roomsStr ? JSON.parse(roomsStr) : {};
+  if (!rooms["GLOBAL"]) { rooms["GLOBAL"] = { name: "Global Master Bank", quizTitle: "Boards Reviewer", description: "The core default question bank.", creator: "Admin", isPublic: true, password: "", categories: ["General"] }; props.setProperty('rooms_db', JSON.stringify(rooms)); }
+  return rooms;
+}
+
+function _getActualUsername(users, username) {
+  if (!username) return null;
+  var lower = username.toLowerCase();
+  return Object.keys(users).find(u => u.toLowerCase() === lower) || null;
+}
+
+function _hashPassword(password, salt) {
+  var rawText = password + ":" + salt;
+  var signature = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, rawText, Utilities.Charset.UTF_8);
+  var hash = "";
+  for (var i = 0; i < signature.length; i++) {
+    var byteVal = signature[i];
+    if (byteVal < 0) byteVal += 256;
+    var byteString = byteVal.toString(16);
+    if (byteString.length == 1) byteString = "0" + byteString;
+    hash += byteString;
+  }
+  return hash;
+}
+
+function _validateSession(username, sessionToken) {
+  if (!username || !sessionToken) return false;
+  var lower = username.toLowerCase();
+  var props = PropertiesService.getScriptProperties();
+  if (lower === 'admin') {
+    var adminToken = props.getProperty('admin_session_token');
+    return (adminToken && sessionToken === adminToken);
+  }
+  var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (actualUsername && users[actualUsername].sessionToken === sessionToken) {
+    return true;
+  }
+  return false;
+}
+
+function _checkRoomAccess(roomId, username, sessionToken, roomPassword, requiresWrite) {
+  var rooms = _getRawRoomsData();
+  var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { allowed: false, msg: "Room not found.", actualKey: null };
+  var room = rooms[actualKey];
+  
+  if (actualKey.toUpperCase() === 'GLOBAL') {
+    if (requiresWrite) {
+      if (username && username.toLowerCase() === 'admin' && _validateSession(username, sessionToken)) {
+        return { allowed: true, actualKey: actualKey };
+      }
+      return { allowed: false, msg: "Only Admin can edit GLOBAL.", actualKey: actualKey };
+    }
+    return { allowed: true, actualKey: actualKey };
+  }
+  
+  var safeUsername = username ? username.toLowerCase() : "";
+  var isValidSession = _validateSession(username, sessionToken);
+  var isOwner = (isValidSession && room.creator.toLowerCase() === safeUsername);
+  var isAdmin = (isValidSession && safeUsername === 'admin');
+  
+  if (isOwner || isAdmin) {
+    return { allowed: true, actualKey: actualKey };
+  }
+  
+  if (requiresWrite) {
+    var isEditor = (isValidSession && room.permissions && room.permissions[safeUsername] === 'editor');
+    if (isEditor) {
+      return { allowed: true, actualKey: actualKey };
+    }
+    return { allowed: false, msg: "Unauthorized.", actualKey: actualKey };
+  }
+  
+  // Read access
+  if (room.isPublic) {
+    return { allowed: true, actualKey: actualKey };
+  }
+  
+  // Private room
+  var hasPermission = (isValidSession && room.permissions && (room.permissions[safeUsername] === 'viewer' || room.permissions[safeUsername] === 'editor'));
+  if (hasPermission) {
+    return { allowed: true, actualKey: actualKey };
+  }
+  
+  if (roomPassword && room.password === roomPassword) {
+    return { allowed: true, actualKey: actualKey };
+  }
+  
+  return { allowed: false, msg: "Incorrect room password or unauthorized.", actualKey: actualKey };
+}
+
+function getRoomsData(username, sessionToken) {
+  var rooms = _getRawRoomsData(); 
+  var safeUsername = username ? username.toLowerCase() : ""; 
+  var isValidSession = _validateSession(username, sessionToken);
+  var isAdmin = (isValidSession && safeUsername === 'admin');
+  for (var k in rooms) {
+    if (!rooms[k].permissions) rooms[k].permissions = {};
+    if (!rooms[k].privacy) rooms[k].privacy = {};
+    if (!rooms[k].lastActive) rooms[k].lastActive = {};
+    
+    var isOwner = (isValidSession && rooms[k].creator.toLowerCase() === safeUsername);
+    if (!isOwner && !isAdmin) delete rooms[k].password;
+  }
+  return rooms;
+}
+
+function createRoom(roomName, description, isPublic, password, username, sessionToken) {
+  if (username && username !== 'Guest') {
+    if (!_validateSession(username, sessionToken)) {
+      return { success: false, msg: "Unauthorized." };
+    }
+  }
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData(); var roomId;
+  do { roomId = Math.random().toString(36).substring(2, 8).toUpperCase(); } while (rooms[roomId]);
+  rooms[roomId] = { name: roomName, quizTitle: roomName, description: description, creator: username, isPublic: isPublic, password: password || "", categories: ["General"], allowPrint: true, permissions: {}, privacy: {}, lastActive: {} };
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  if (username && username !== 'Guest') { 
+    var users = JSON.parse(props.getProperty('users_db') || '{}'); 
+    var actualUsername = _getActualUsername(users, username);
+    if (actualUsername) { 
+      if (!users[actualUsername].joinedRooms) users[actualUsername].joinedRooms = []; 
+      if (users[actualUsername].joinedRooms.indexOf(roomId) === -1) { 
+        users[actualUsername].joinedRooms.push(roomId); 
+        props.setProperty('users_db', JSON.stringify(users)); 
+      } 
+    } 
+  }
+  return { success: true, msg: "Room created! Your Code is " + roomId, rooms: getRoomsData(username, sessionToken), newId: roomId };
+}
+
+function joinAndRecordRoom(roomId, password, username, sessionToken) {
+  var rooms = _getRawRoomsData(); var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { success: false, msg: "Room not found." };
+  var room = rooms[actualKey]; 
+  var safeUsername = username ? username.toLowerCase() : "";
+  var isValidSession = _validateSession(username, sessionToken);
+  var isOwner = (isValidSession && room.creator.toLowerCase() === safeUsername); 
+  var isAdmin = (isValidSession && safeUsername === 'admin');
+  
+  if (!room.isPublic && !isOwner && !isAdmin) { if (room.password !== password) return { success: false, msg: "Incorrect room password." }; }
+  var joinedRooms = [];
+  if (username && username !== 'Guest') { 
+    if (!isValidSession) return { success: false, msg: "Unauthorized." };
+    var props = PropertiesService.getScriptProperties(); 
+    var users = JSON.parse(props.getProperty('users_db') || '{}'); 
+    var actualUsername = _getActualUsername(users, username);
+    if (actualUsername) { 
+      if (!users[actualUsername].joinedRooms) users[actualUsername].joinedRooms = []; 
+      if (users[actualUsername].joinedRooms.indexOf(actualKey) === -1) { 
+        users[actualUsername].joinedRooms.push(actualKey); 
+      } 
+      if (!room.permissions) room.permissions = {};
+      var userLower = actualUsername.toLowerCase();
+      if (!room.permissions[userLower] && userLower !== room.creator.toLowerCase()) {
+        room.permissions[userLower] = 'viewer';
+      }
+      props.setProperty('rooms_db', JSON.stringify(rooms));
+      props.setProperty('users_db', JSON.stringify(users));
+      joinedRooms = users[actualUsername].joinedRooms; 
+    } 
+  }
+  return { success: true, roomId: actualKey, rooms: getRoomsData(username, sessionToken), joinedRooms: joinedRooms };
+}
+
+function leaveJoinedRoom(roomId, username, sessionToken) {
+    if (!username || username === 'Guest') return {success: false};
+    if (!_validateSession(username, sessionToken)) return {success: false, msg: "Unauthorized."};
+    var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+    var actualUsername = _getActualUsername(users, username);
+    if (actualUsername && users[actualUsername].joinedRooms) { 
+      users[actualUsername].joinedRooms = users[actualUsername].joinedRooms.filter(id => id !== roomId); 
+      props.setProperty('users_db', JSON.stringify(users)); 
+      return {success: true, joinedRooms: users[actualUsername].joinedRooms}; 
+    }
+    return {success: false};
+}
+
+function toggleRoomPrivacyDB(roomId, username, newPassword, sessionToken) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData();
+  var wasPublic = rooms[actualKey].isPublic; rooms[actualKey].isPublic = !wasPublic;
+  if (!rooms[actualKey].isPublic) {
+      rooms[actualKey].password = newPassword || rooms[actualKey].password;
+      var users = JSON.parse(props.getProperty('users_db') || '{}'); var usersChanged = false;
+      for (var u in users) { if (u !== rooms[actualKey].creator && u.toLowerCase() !== 'admin') { if (users[u].joinedRooms && users[u].joinedRooms.indexOf(actualKey) !== -1) { users[u].joinedRooms = users[u].joinedRooms.filter(id => id !== actualKey); if (users[u].progress && users[u].progress[actualKey]) delete users[u].progress[actualKey]; usersChanged = true; } } }
+      if (usersChanged) props.setProperty('users_db', JSON.stringify(users));
+  } else { rooms[actualKey].password = ""; }
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  return { success: true, msg: rooms[actualKey].isPublic ? "Room is now Public." : "Room is now Private. Other users were kicked out.", rooms: getRoomsData(username, sessionToken) };
+}
+
+function updateRoomInfo(roomId, newName, newDesc, newQuizTitle, newPassword, username, allowPrint, sessionToken) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData();
+  rooms[actualKey].name = newName; rooms[actualKey].description = newDesc; rooms[actualKey].quizTitle = newQuizTitle || newName;
+  if (newPassword !== undefined && newPassword !== null && newPassword.trim() !== "") rooms[actualKey].password = newPassword.trim();
+  rooms[actualKey].allowPrint = allowPrint !== false;
+  props.setProperty('rooms_db', JSON.stringify(rooms)); return { success: true, msg: "Room updated!", rooms: getRoomsData(username, sessionToken) };
+}
+
+function updateRoomCategories(roomId, newCategories, username, sessionToken) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData();
+  rooms[actualKey].categories = newCategories; props.setProperty('rooms_db', JSON.stringify(rooms)); return { success: true, rooms: getRoomsData(username, sessionToken) };
+}
+
+function renameCategoryDB(roomId, oldName, newName, username, sessionToken) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData();
+  var cats = rooms[actualKey].categories; var idx = cats.indexOf(oldName); if (idx === -1) return { success: false, msg: "Category not found." }; if (cats.includes(newName)) return { success: false, msg: "Name already exists." };
+  cats[idx] = newName; props.setProperty('rooms_db', JSON.stringify(rooms));
+  try { var folder = getDbFolder(); var oldFileName = getStorageKey(actualKey, oldName) + ".json"; var newFileName = getStorageKey(actualKey, newName) + ".json"; var files = folder.getFilesByName(oldFileName); if (files.hasNext()) files.next().setName(newFileName); } catch(e) {}
+  return { success: true, rooms: getRoomsData(username, sessionToken), msg: "Category renamed!" };
+}
+
+function renameTagDB(roomId, subject, oldTag, newTag, username, sessionToken) {
+    var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+    if (!access.allowed) return { success: false, msg: access.msg };
+    var questions = loadQuestionsJSON(roomId, subject, username, sessionToken, null); var changed = false;
+    for(var i = 0; i < questions.length; i++) { if(questions[i].tag === oldTag) { questions[i].tag = newTag; changed = true; } }
+    if(changed) { saveQuestionsJSON(roomId, subject, questions, username, sessionToken); return {success: true, msg: "Group renamed successfully!", questions: questions}; }
+    return {success: false, msg: "No questions found with that tag."};
+}
+
+function deleteRoomDB(roomId, username, sessionToken) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, null, true);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  if (actualKey.toUpperCase() === 'GLOBAL') return { success: false, msg: "Protected." };
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData();
+  delete rooms[actualKey]; props.setProperty('rooms_db', JSON.stringify(rooms));
+  var allKeys = props.getKeys(); for(var i=0; i<allKeys.length; i++) { if(allKeys[i].toUpperCase().indexOf(actualKey.toUpperCase() + '_') === 0) props.deleteProperty(allKeys[i]); }
+  try { var folder = getDbFolder(); var files = folder.getFiles(); while(files.hasNext()) { var file = files.next(); if(file.getName().toUpperCase().indexOf(actualKey.toUpperCase() + '_') === 0) file.setTrashed(true); } } catch(e) {}
+  return { success: true, msg: "Room deleted successfully.", rooms: getRoomsData(username, sessionToken) };
+}
+
+function saveQuestionsJSON(bankId, subject, questionsArray, username, sessionToken) {
+  var access = _checkRoomAccess(bankId, username, sessionToken, null, true);
+  if (!access.allowed) throw new Error(access.msg);
+  var actualKey = access.actualKey;
+  try {
+    var folder = getDbFolder(); var fileName = getStorageKey(bankId, subject) + ".json"; var files = folder.getFilesByName(fileName); var content = JSON.stringify(questionsArray);
+    if (files.hasNext()) { files.next().setContent(content); } else { folder.createFile(fileName, content, MimeType.PLAIN_TEXT); } return { msg: "Saved successfully!" };
+  } catch(e) { throw new Error("Drive Save Error: " + e.message); }
+}
+
+function loadQuestionsJSON(bankId, subject, username, sessionToken, roomPassword) {
+  var access = _checkRoomAccess(bankId, username, sessionToken, roomPassword, false);
+  if (!access.allowed) throw new Error("Unauthorized access to room: " + access.msg);
+  try { var folder = getDbFolder(); var fileName = getStorageKey(bankId, subject) + ".json"; var files = folder.getFilesByName(fileName); if (files.hasNext()) return JSON.parse(files.next().getBlob().getDataAsString()); return []; } catch(e) { return []; }
+}
+
+function clearDatabase(bankId, subject, username, sessionToken) {
+  var access = _checkRoomAccess(bankId, username, sessionToken, null, true);
+  if (!access.allowed) return { msg: access.msg };
+  var actualKey = access.actualKey;
+  try {
+    var folder = getDbFolder(); var fileName = getStorageKey(bankId, subject) + ".json"; var files = folder.getFilesByName(fileName); while (files.hasNext()) files.next().setTrashed(true);
+    PropertiesService.getScriptProperties().deleteProperty(getStorageKey(bankId, subject)); return { msg: "Cleared all questions." };
+  } catch(e) { return { msg: "Error clearing database." }; }
+}
+
+function registerUser(username, password, email) {
+  var lowerUsername = username.toLowerCase();
+  if (lowerUsername === 'admin') return { success: false, msg: "Reserved username." };
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (actualUsername) return { success: false, msg: "Username already exists!" };
+  
+  var token = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+  var salt = lowerUsername;
+  var passwordHash = _hashPassword(password, salt);
+  
+  users[username] = { passwordHash: passwordHash, email: email, progress: {}, joinedRooms: ['GLOBAL'], sessionToken: token };
+  props.setProperty('users_db', JSON.stringify(users)); 
+  return { success: true, msg: "Account created!", progress: {}, joinedRooms: ['GLOBAL'], sessionToken: token };
+}
+
+function loginUser(username, password) {
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var lowerUsername = username.toLowerCase();
+  
+  var adminPass = props.getProperty('ADMIN_PASSWORD');
+  if (!adminPass) {
+    adminPass = 'psych2026';
+    props.setProperty('ADMIN_PASSWORD', adminPass);
+  }
+  
+  if (lowerUsername === 'admin') {
+    var adminSalt = 'admin_salt';
+    var adminHash = props.getProperty('ADMIN_PASSWORD_HASH');
+    if (!adminHash) {
+      if (password === adminPass) {
+        adminHash = _hashPassword(password, adminSalt);
+        props.setProperty('ADMIN_PASSWORD_HASH', adminHash);
+        props.deleteProperty('ADMIN_PASSWORD');
+      } else {
+        return { success: false, msg: "Incorrect admin password." };
+      }
+    } else {
+      var inputHash = _hashPassword(password, adminSalt);
+      if (inputHash !== adminHash) {
+        return { success: false, msg: "Incorrect admin password." };
+      }
+    }
+    var adminToken = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+    props.setProperty('admin_session_token', adminToken);
+    return { success: true, msg: "Logged in as Admin!", progress: {}, joinedRooms: [], sessionToken: adminToken };
+  }
+  
+  var actualUsername = _getActualUsername(users, username);
+  if (!actualUsername) return { success: false, msg: "User not found." }; 
+  
+  var userObj = users[actualUsername];
+  var isCorrect = false;
+  var needsMigration = false;
+  var salt = actualUsername.toLowerCase();
+  
+  if (userObj.passwordHash) {
+    var expectedHash = _hashPassword(password, salt);
+    if (userObj.passwordHash === expectedHash) {
+      isCorrect = true;
+    }
+  } else if (userObj.password) {
+    if (userObj.password === password) {
+      isCorrect = true;
+      needsMigration = true;
+    }
+  }
+  
+  if (!isCorrect) return { success: false, msg: "Incorrect password." };
+  
+  if (needsMigration) {
+    userObj.passwordHash = _hashPassword(password, salt);
+    delete userObj.password;
+  }
+  
+  var token = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+  userObj.sessionToken = token;
+  props.setProperty('users_db', JSON.stringify(users));
+  return { success: true, msg: "Logged in!", progress: userObj.progress || {}, joinedRooms: userObj.joinedRooms || [], sessionToken: token };
+}
+
+function mergeProgressObjects(serverProgress, clientProgress) {
+  if (!serverProgress) serverProgress = {};
+  if (!clientProgress) clientProgress = {};
+  
+  var merged = {};
+  for (var rId in serverProgress) {
+    merged[rId] = JSON.parse(JSON.stringify(serverProgress[rId]));
+  }
+  
+  for (var rId in clientProgress) {
+    if (!merged[rId]) {
+      merged[rId] = JSON.parse(JSON.stringify(clientProgress[rId]));
+      continue;
+    }
+    
+    for (var subject in clientProgress[rId]) {
+      if (!merged[rId][subject]) {
+        merged[rId][subject] = JSON.parse(JSON.stringify(clientProgress[rId][subject]));
+        continue;
+      }
+      
+      var serverSubject = merged[rId][subject];
+      var clientSubject = clientProgress[rId][subject];
+      
+      var bMap = {};
+      if (serverSubject.bookmarks) {
+        serverSubject.bookmarks.forEach(function(id) { bMap[id] = true; });
+      }
+      if (clientSubject.bookmarks) {
+        clientSubject.bookmarks.forEach(function(id) { bMap[id] = true; });
+      }
+      serverSubject.bookmarks = Object.keys(bMap);
+      
+      if (!serverSubject.mistakes) serverSubject.mistakes = {};
+      if (clientSubject.mistakes) {
+        for (var qId in clientSubject.mistakes) {
+          serverSubject.mistakes[qId] = clientSubject.mistakes[qId];
+        }
+      }
+      
+      for (var key in clientSubject) {
+        if (key === 'bookmarks' || key === 'mistakes') continue;
+        if (typeof clientSubject[key] === 'object' && clientSubject[key] !== null) {
+          if (!serverSubject[key]) serverSubject[key] = {};
+          for (var qId in clientSubject[key]) {
+            serverSubject[key][qId] = clientSubject[key][qId];
+          }
+        }
+      }
+    }
+  }
+  return merged;
+}
+
+function syncUserProgress(username, progressData, clientToken) {
+  if (username.toLowerCase() === 'admin' || username === 'Guest') return { success: false };
+  if (!_validateSession(username, clientToken)) {
+    return { success: false, reason: "session_conflict", msg: "This account is logged in on another device." };
+  }
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (actualUsername) { 
+    var serverProgress = users[actualUsername].progress || {};
+    var clientProgress = progressData || {};
+    var mergedProgress = mergeProgressObjects(serverProgress, clientProgress);
+    users[actualUsername].progress = mergedProgress;
+    props.setProperty('users_db', JSON.stringify(users)); 
+    return { success: true, progress: mergedProgress, joinedRooms: users[actualUsername].joinedRooms || [] }; 
+  } 
+  return { success: false };
+}
+
+function forceFetchProgress(username, clientToken) {
+  if (username.toLowerCase() === 'admin' || username === 'Guest') return { success: false };
+  if (!_validateSession(username, clientToken)) {
+    return { success: false, reason: "session_conflict", msg: "This account is logged in on another device." };
+  }
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (actualUsername) {
+    return { success: true, progress: users[actualUsername].progress || {}, joinedRooms: users[actualUsername].joinedRooms || [] }; 
+  }
+  return { success: false };
+}
+
+function forceOverwriteSession(username, clientToken, password) {
+  if (username.toLowerCase() === 'admin' || username === 'Guest') return { success: false, msg: "Unauthorized." };
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (!actualUsername) return { success: false, msg: "User not found." };
+  
+  var userObj = users[actualUsername];
+  var isCorrect = false;
+  var needsMigration = false;
+  var salt = actualUsername.toLowerCase();
+  
+  if (userObj.passwordHash) {
+    var expectedHash = _hashPassword(password, salt);
+    if (userObj.passwordHash === expectedHash) {
+      isCorrect = true;
+    }
+  } else if (userObj.password) {
+    if (userObj.password === password) {
+      isCorrect = true;
+      needsMigration = true;
+    }
+  }
+  
+  if (!isCorrect) return { success: false, msg: "Incorrect password." };
+  
+  if (needsMigration) {
+    userObj.passwordHash = _hashPassword(password, salt);
+    delete userObj.password;
+  }
+  
+  userObj.sessionToken = clientToken;
+  props.setProperty('users_db', JSON.stringify(users));
+  return { success: true };
+}
+
+function sendPasswordResetPin(username, email) {
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (actualUsername && users[actualUsername].email.toLowerCase() === email.toLowerCase()) {
+    var pin = Math.floor(100000 + Math.random() * 900000).toString(); 
+    users[actualUsername].resetPin = pin; 
+    users[actualUsername].resetPinTime = Date.now();
+    users[actualUsername].failedPinAttempts = 0;
+    props.setProperty('users_db', JSON.stringify(users));
+    try { MailApp.sendEmail(email, "Boards Reviewer Reset", "Your PIN is: " + pin); return { success: true, msg: "PIN sent to your email!" }; } catch(e) { return { success: false, msg: "Email failed." }; }
+  } return { success: false, msg: "Username and Email do not match." };
+}
+
+function resetPasswordWithPin(username, pin, newPassword) {
+  var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, username);
+  if (!actualUsername) return { success: false, msg: "User not found." };
+  
+  var userObj = users[actualUsername];
+  if (!userObj.resetPin) return { success: false, msg: "No active password recovery request found." };
+  
+  if (userObj.failedPinAttempts === undefined) userObj.failedPinAttempts = 0;
+  if (userObj.failedPinAttempts >= 5) {
+    delete userObj.resetPin;
+    delete userObj.resetPinTime;
+    delete userObj.failedPinAttempts;
+    props.setProperty('users_db', JSON.stringify(users));
+    return { success: false, msg: "Too many failed attempts. Recovery PIN has been cancelled. Please request a new PIN." };
+  }
+  
+  var timeLimitMs = 10 * 60 * 1000;
+  if (Date.now() - userObj.resetPinTime > timeLimitMs) {
+    delete userObj.resetPin;
+    delete userObj.resetPinTime;
+    delete userObj.failedPinAttempts;
+    props.setProperty('users_db', JSON.stringify(users));
+    return { success: false, msg: "Recovery PIN has expired. Please request a new PIN." };
+  }
+  
+  if (userObj.resetPin === pin) {
+    var salt = actualUsername.toLowerCase();
+    userObj.passwordHash = _hashPassword(newPassword, salt);
+    if (userObj.password) delete userObj.password;
+    delete userObj.resetPin;
+    delete userObj.resetPinTime;
+    delete userObj.failedPinAttempts;
+    props.setProperty('users_db', JSON.stringify(users));
+    return { success: true, msg: "Password changed successfully!" };
+  } else {
+    userObj.failedPinAttempts++;
+    var attemptsLeft = 5 - userObj.failedPinAttempts;
+    props.setProperty('users_db', JSON.stringify(users));
+    if (attemptsLeft <= 0) {
+      delete userObj.resetPin;
+      delete userObj.resetPinTime;
+      delete userObj.failedPinAttempts;
+      props.setProperty('users_db', JSON.stringify(users));
+      return { success: false, msg: "Too many failed attempts. Recovery PIN has been cancelled." };
+    }
+    return { success: false, msg: "Invalid PIN. " + attemptsLeft + " attempts remaining." };
+  }
+}
+
+function getAdminPanelData(adminUser, sessionToken) {
+    if (!_validateSession(adminUser, sessionToken)) return { success: false, msg: "Unauthorized" };
+    if (adminUser.toLowerCase() !== 'admin') return { success: false, msg: "Unauthorized" };
+    var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+    for (var u in users) { 
+      delete users[u].password; 
+      delete users[u].passwordHash; 
+      delete users[u].resetPin; 
+    }
+    return { success: true, users: users };
+}
+
+function adminDeleteUser(adminUser, targetUser, sessionToken) {
+    if (!_validateSession(adminUser, sessionToken)) return { success: false, msg: "Unauthorized" };
+    if (adminUser.toLowerCase() !== 'admin') return { success: false, msg: "Unauthorized" };
+    var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+    var actualTarget = _getActualUsername(users, targetUser);
+    if (actualTarget) { delete users[actualTarget]; props.setProperty('users_db', JSON.stringify(users)); return { success: true, msg: "User deleted." }; }
+    return { success: false, msg: "User not found." };
+}
+
+function adminResetUserProgress(adminUser, targetUser, sessionToken) {
+    if (!_validateSession(adminUser, sessionToken)) return { success: false, msg: "Unauthorized" };
+    if (adminUser.toLowerCase() !== 'admin') return { success: false, msg: "Unauthorized" };
+    var props = PropertiesService.getScriptProperties(); var users = JSON.parse(props.getProperty('users_db') || '{}');
+    var actualTarget = _getActualUsername(users, targetUser);
+    if (actualTarget) { users[actualTarget].progress = {}; props.setProperty('users_db', JSON.stringify(users)); return { success: true, msg: "Progress reset." }; }
+    return { success: false, msg: "User not found." };
+}
+
+function setUserPermission(roomId, targetUser, role, creatorUsername, sessionToken) {
+  if (!_validateSession(creatorUsername, sessionToken)) return { success: false, msg: "Unauthorized." };
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData(); var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { success: false, msg: "Room not found." };
+  var room = rooms[actualKey];
+  var isOwner = (room.creator.toLowerCase() === creatorUsername.toLowerCase()) || (creatorUsername.toLowerCase() === 'admin');
+  if (!isOwner) return { success: false, msg: "Unauthorized. Only the room creator or Admin can change permissions." };
+  if (!room.permissions) room.permissions = {};
+  
+  var targetLower = targetUser.toLowerCase();
+  if (targetLower === room.creator.toLowerCase()) return { success: false, msg: "Cannot change the creator's permission." };
+  
+  if (role === 'editor' || role === 'viewer') {
+    room.permissions[targetLower] = role;
+  } else {
+    delete room.permissions[targetLower];
+    if (room.lastActive) delete room.lastActive[targetLower];
+    if (room.privacy) delete room.privacy[targetLower];
+    
+    var users = JSON.parse(props.getProperty('users_db') || '{}');
+    var actualTarget = _getActualUsername(users, targetUser);
+    if (actualTarget && users[actualTarget].joinedRooms) {
+      users[actualTarget].joinedRooms = users[actualTarget].joinedRooms.filter(id => id !== actualKey);
+      props.setProperty('users_db', JSON.stringify(users));
+    }
+  }
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  return { success: true, msg: "Permission updated successfully.", rooms: getRoomsData(creatorUsername, sessionToken) };
+}
+
+function addUserToRoom(roomId, targetUser, creatorUsername, sessionToken) {
+  if (!_validateSession(creatorUsername, sessionToken)) return { success: false, msg: "Unauthorized." };
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData(); var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { success: false, msg: "Room not found." };
+  var room = rooms[actualKey];
+  var isOwner = (room.creator.toLowerCase() === creatorUsername.toLowerCase()) || (creatorUsername.toLowerCase() === 'admin');
+  if (!isOwner) return { success: false, msg: "Unauthorized." };
+  
+  var users = JSON.parse(props.getProperty('users_db') || '{}');
+  var actualUsername = _getActualUsername(users, targetUser);
+  if (!actualUsername) return { success: false, msg: "User '" + targetUser + "' not found." };
+  
+  if (!users[actualUsername].joinedRooms) users[actualUsername].joinedRooms = [];
+  if (users[actualUsername].joinedRooms.indexOf(actualKey) === -1) {
+    users[actualUsername].joinedRooms.push(actualKey);
+  }
+  
+  if (!room.permissions) room.permissions = {};
+  var targetLower = actualUsername.toLowerCase();
+  if (!room.permissions[targetLower]) {
+    room.permissions[targetLower] = 'viewer';
+  }
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  props.setProperty('users_db', JSON.stringify(users));
+  
+  return { success: true, msg: "User '" + actualUsername + "' added to room.", rooms: getRoomsData(creatorUsername, sessionToken) };
+}
+
+function pingUserActivity(roomId, username, sessionToken) {
+  if (!username || username === 'Guest') return { success: false };
+  if (!_validateSession(username, sessionToken)) return { success: false };
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData(); var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { success: false };
+  var room = rooms[actualKey];
+  if (!room.lastActive) room.lastActive = {};
+  room.lastActive[username.toLowerCase()] = Date.now();
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  return { success: true };
+}
+
+function toggleUserPrivacy(roomId, username, isPrivate, sessionToken) {
+  if (!username || username === 'Guest') return { success: false, msg: "Guests cannot configure privacy." };
+  if (!_validateSession(username, sessionToken)) return { success: false, msg: "Unauthorized." };
+  var props = PropertiesService.getScriptProperties(); var rooms = _getRawRoomsData(); var actualKey = Object.keys(rooms).find(k => k.toUpperCase() === roomId.toUpperCase());
+  if (!actualKey) return { success: false, msg: "Room not found." };
+  var room = rooms[actualKey];
+  if (!room.privacy) room.privacy = {};
+  if (isPrivate) {
+    room.privacy[username.toLowerCase()] = true;
+  } else {
+    delete room.privacy[username.toLowerCase()];
+  }
+  props.setProperty('rooms_db', JSON.stringify(rooms));
+  return { success: true, msg: "Privacy updated.", rooms: getRoomsData(username, sessionToken) };
+}
+
+function exportRoomToGoogleDoc(roomId, subject, selectedPrintTags, username, sessionToken, roomPassword) {
+  var access = _checkRoomAccess(roomId, username, sessionToken, roomPassword, false);
+  if (!access.allowed) return { success: false, msg: access.msg };
+  var actualKey = access.actualKey;
+  try {
+    var rooms = _getRawRoomsData();
+    var questions = loadQuestionsJSON(roomId, subject, username, sessionToken, roomPassword);
+    if (!questions || questions.length === 0) {
+      return { success: false, msg: "No questions found in this category." };
+    }
+    
+    var finalQs = [];
+    selectedPrintTags.forEach(function(printTagObj) {
+      var tagName = printTagObj.tag;
+      var tagQs = questions.filter(function(q) { return q.tag === tagName; });
+      tagQs.sort(function(a, b) { return a.displayItemNumber - b.displayItemNumber; });
+      
+      if (printTagObj.mode === 'custom' && printTagObj.range && printTagObj.range.trim() !== '') {
+        var allowed = {};
+        printTagObj.range.split(',').forEach(function(part) {
+          if (part.indexOf('-') !== -1) {
+            var bounds = part.split('-');
+            var start = Number(bounds[0]);
+            var end = Number(bounds[1]);
+            for (var i = start; i <= end; i++) allowed[i] = true;
+          } else {
+            var num = Number(part.trim());
+            if (!isNaN(num)) allowed[num] = true;
+          }
+        });
+        tagQs = tagQs.filter(function(q) { return allowed[q.displayItemNumber]; });
+      }
+      finalQs = finalQs.concat(tagQs);
+    });
+    
+    if (finalQs.length === 0) {
+      return { success: false, msg: "No questions matched your filter/range selections." };
+    }
+    
+    var roomName = rooms[actualKey].name || actualKey;
+    var docName = roomName + " - " + subject + " Mock Exam";
+    var doc = DocumentApp.create(docName);
+    var body = doc.getBody();
+    
+    var titlePara = body.appendParagraph(docName);
+    titlePara.setHeading(DocumentApp.ParagraphHeading.TITLE);
+    titlePara.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    titlePara.setFontFamily("Arial");
+    titlePara.setFontSize(20);
+    titlePara.setBold(true);
+    
+    var subPara = body.appendParagraph("Generated on " + new Date().toLocaleDateString() + " • Powered by Boards Reviewer");
+    subPara.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    subPara.setFontFamily("Arial");
+    subPara.setFontSize(10);
+    subPara.setItalic(true);
+    
+    var warningPara = body.appendParagraph("⚠️ NOTE: This document will be auto-deleted in 24 hours. Please select 'File' > 'Make a copy' to save a permanent copy to your Google Drive.");
+    warningPara.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    warningPara.setFontFamily("Arial");
+    warningPara.setFontSize(10.5);
+    warningPara.setBold(true);
+    body.appendParagraph("");
+    
+    finalQs.forEach(function(q, index) {
+      var printNum = index + 1;
+      var qText = printNum + ". " + cleanHTMLTags(q.text);
+      var qPara = body.appendParagraph(qText);
+      qPara.setFontFamily("Arial");
+      qPara.setFontSize(11);
+      qPara.setBold(true);
+      qPara.setSpacingAfter(4);
+      qPara.setSpacingBefore(12);
+      
+      if (q.imageUrl) {
+        var fileId = getFileIdFromUrl(q.imageUrl);
+        if (fileId) {
+          try {
+            var blob = DriveApp.getFileById(fileId).getBlob();
+            var img = body.appendImage(blob);
+            var w = img.getWidth();
+            var h = img.getHeight();
+            if (w > 350) {
+              var ratio = 350 / w;
+              img.setWidth(350);
+              img.setHeight(h * ratio);
+            }
+          } catch(e) {}
+        }
+      }
+      
+      if (q.options && q.options.length > 0) {
+        q.options.forEach(function(o) {
+          var oText = o.letter.toUpperCase() + ") " + cleanHTMLTags(o.text);
+          var oPara = body.appendParagraph(oText);
+          oPara.setFontFamily("Arial");
+          oPara.setFontSize(10.5);
+          oPara.setIndentStart(24);
+          oPara.setSpacingAfter(2);
+        });
+      }
+    });
+    
+    body.appendPageBreak();
+    
+    var keyHeader = body.appendParagraph("ANSWER KEY");
+    keyHeader.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    keyHeader.setFontFamily("Arial");
+    keyHeader.setFontSize(16);
+    keyHeader.setBold(true);
+    keyHeader.setSpacingAfter(15);
+    
+    var keyStrings = [];
+    for (var i = 0; i < finalQs.length; i++) {
+      var qNum = i + 1;
+      var ansLetter = finalQs[i].correct ? finalQs[i].correct.toUpperCase() : "N/A";
+      keyStrings.push(qNum + ":" + ansLetter);
+    }
+    
+    var chunks = [];
+    for (var i = 0; i < keyStrings.length; i += 10) {
+      chunks.push(keyStrings.slice(i, i + 10).join(",   "));
+    }
+    
+    chunks.forEach(function(chunkText) {
+      var p = body.appendParagraph(chunkText);
+      p.setFontFamily("Arial");
+      p.setFontSize(11);
+      p.setSpacingAfter(6);
+    });
+    
+    doc.saveAndClose();
+    
+    var file = DriveApp.getFileById(doc.getId());
+    try {
+      var folder = getDbFolder();
+      file.moveTo(folder);
+    } catch(e) {}
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch(e) {}
+    return { success: true, url: doc.getUrl(), docName: docName };
+  } catch(e) {
+    return { success: false, msg: e.toString() };
+  }
+}
+
+function getFileIdFromUrl(url) {
+  if (!url) return null;
+  var match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
+}
+
+function cleanHTMLTags(str) {
+  if (!str) return "";
+  return str.replace(/<\/?[^>]+(>|$)/g, "");
+}
