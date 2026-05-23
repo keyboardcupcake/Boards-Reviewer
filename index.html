@@ -681,6 +681,7 @@
       <div class="custom-picker-swatch" id="customPickerDashboard"></div>
     </div>
     <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+      <button class="btn-outline btn-small" id="headerLogoutBtn" onclick="logoutUser()" style="border:1px solid var(--border); font-weight:800; border-radius:8px; padding:8px 16px; width:auto; height:38px; color:var(--danger); border-color:var(--danger); display:none;">🚪 Log Out</button>
       <div class="user-profile-btn" onclick="handleProfileClick()" title="Profile & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); user-select:none;" id="circularProfileBtn">👤</div>
       <button class="btn-outline" onclick="openSettingsModal()" title="App & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); width:40px; min-width:40px;">⚙️</button>
     </div>
@@ -2102,56 +2103,82 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
 
+    // Clean up mismatched or expired Firebase sessions
+    if (currentUser && currentUser !== 'Guest' && !auth.currentUser) {
+      showLoader(false);
+      logoutUser();
+      customAlert("Session Expired", "Your session has expired. Please log in again to continue.");
+      return;
+    }
+
+
     google.script.run.withSuccessHandler(rooms => { 
-      allRooms = rooms || {}; 
-      if (currentUser && currentUser !== 'Guest') { 
-        const token = localStorage.getItem('psych_session_token') || "";
-        google.script.run.withSuccessHandler(res => { 
+      try {
+        allRooms = rooms || {}; 
+        if (currentUser && currentUser !== 'Guest') { 
+          const token = localStorage.getItem('psych_session_token') || "";
+          google.script.run.withSuccessHandler(res => { 
+            try {
+              showLoader(false); 
+              if(res.success) { 
+                seenQuestions = res.progress || {}; 
+                currentUserJoinedRooms = res.joinedRooms || []; 
+                localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions)); 
+                finalizeDashboardLoad();
+              } else if (res.reason === "session_conflict") {
+                handleSessionConflict(() => {
+                  // If logged out, stop loading dashboard
+                });
+              } else {
+                finalizeDashboardLoad();
+              }
+            } catch (resErr) {
+              showLoader(false);
+              finalizeDashboardLoad();
+              console.error("Error in forceFetchProgress success handler:", resErr);
+            }
+          }).withFailureHandler(err => {
+            showLoader(false);
+            finalizeDashboardLoad();
+          }).forceFetchProgress(currentUser, token); 
+        } else { 
+          if (currentUser === 'Guest') {
+            try {
+              currentUserJoinedRooms = JSON.parse(localStorage.getItem('psych_guest_joined_rooms')) || [];
+            } catch(e) {
+              currentUserJoinedRooms = [];
+            }
+            if (!currentUserJoinedRooms.includes('GLOBAL')) {
+              currentUserJoinedRooms.push('GLOBAL');
+            }
+          }
           showLoader(false); 
-          if(res.success) { 
-            seenQuestions = res.progress || {}; 
-            currentUserJoinedRooms = res.joinedRooms || []; 
-            localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions)); 
-            finalizeDashboardLoad();
-          } else if (res.reason === "session_conflict") {
-            handleSessionConflict(() => {
-              // If logged out, stop loading dashboard
-            });
-          } else {
-            finalizeDashboardLoad();
-          }
-        }).withFailureHandler(err => {
-          showLoader(false);
-          finalizeDashboardLoad();
-        }).forceFetchProgress(currentUser, token); 
-      } else { 
-        if (currentUser === 'Guest') {
-          try {
-            currentUserJoinedRooms = JSON.parse(localStorage.getItem('psych_guest_joined_rooms')) || [];
-          } catch(e) {
-            currentUserJoinedRooms = [];
-          }
-          if (!currentUserJoinedRooms.includes('GLOBAL')) {
-            currentUserJoinedRooms.push('GLOBAL');
-          }
+          finalizeDashboardLoad(); 
         }
-        showLoader(false); 
-        finalizeDashboardLoad(); 
+      } catch (roomsErr) {
+        showLoader(false);
+        console.error("Error in getRoomsData success handler:", roomsErr);
       }
     }).withFailureHandler(err => { 
       showLoader(false); 
       customAlert("Connection Error", "Failed to connect to server: " + (err ? err.message || err : "Unknown Error")); 
     }).getRoomsData(currentUser, getSessionToken()); 
   }
+
   function finalizeDashboardLoad() {
     try {
       const dbView = document.getElementById('dashboardView');
       const mainView = document.getElementById('mainAppView');
       const navBtn = document.getElementById('navDashBtn');
+      const headerLogout = document.getElementById('headerLogoutBtn');
       
       if (dbView) dbView.style.display = 'block';
       if (mainView) mainView.style.display = 'none';
       if (navBtn) navBtn.style.display = 'none';
+      
+      if (headerLogout) {
+        headerLogout.style.display = (currentUser && currentUser !== 'Guest') ? 'inline-block' : 'none';
+      }
       
       // Sync the top circular profile button color if custom picker exists
       const profileBtn = document.getElementById('circularProfileBtn');
@@ -2179,6 +2206,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       handleUrlParams();
     } catch (err) {
       console.error("Error in finalizeDashboardLoad:", err);
+      try {
+        customAlert("Finalize Load Error ⚠️", `An error occurred: <b>${err.message || err}</b>`);
+      } catch(alertErr) {
+        alert("Finalize Load Error: " + (err.message || err));
+      }
     }
   }
 
@@ -2275,6 +2307,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       clearInterval(activityPingInterval);
       activityPingInterval = null;
     }
+    try {
+      auth.signOut();
+    } catch(signOutErr) {
+      console.warn("Firebase signOut error:", signOutErr);
+    }
     currentUser = ''; 
     isAdmin = false; 
     currentUserJoinedRooms = []; 
@@ -2292,6 +2329,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const closeBtn = document.getElementById('authCloseBtn'); 
     if (closeBtn) closeBtn.style.display = 'none'; 
   }
+
   function showForgotPasswordUI() { document.getElementById('authForms').style.display = 'none'; document.getElementById('forgotPasswordForms').style.display = 'block'; document.getElementById('pinRequestSection').style.display = 'block'; document.getElementById('pinSubmitSection').style.display = 'none'; }
   function cancelForgotPassword() { document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authForms').style.display = 'block'; }
   function requestResetPin() { const user = document.getElementById('resetUser').value.trim(); const email = document.getElementById('resetEmail').value.trim(); if(!user || !email) { customAlert("Error", "Please enter both username and email."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { document.getElementById('pinRequestSection').style.display = 'none'; document.getElementById('pinSubmitSection').style.display = 'block'; customAlert("PIN Sent", res.msg); } else { customAlert("Error", res.msg); } }).withFailureHandler(e => { showLoader(false); customAlert("Error", "Failed to communicate with server."); }).sendPasswordResetPin(user, email); }
@@ -2468,6 +2506,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }
     } catch (err) {
       console.error("Error in switchRoomTab:", err);
+      try {
+        customAlert("Switch Tab Error ⚠️", `An error occurred: <b>${err.message || err}</b>`);
+      } catch(alertErr) {
+        alert("Switch Tab Error: " + (err.message || err));
+      }
     }
   }
 
@@ -2549,6 +2592,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }
     } catch (err) {
       console.error("Error in renderRoomList:", err);
+      try {
+        customAlert("Render List Error ⚠️", `An error occurred: <b>${err.message || err}</b>`);
+      } catch(alertErr) {
+        alert("Render List Error: " + (err.message || err));
+      }
     }
   }
   function toggleRoomCardPassword(roomId) { const pwInput = document.getElementById(`pw_display_${roomId}`); const toggleIcon = document.getElementById(`pw_toggle_${roomId}`); if(pwInput.type === 'password') { pwInput.type = 'text'; toggleIcon.innerText = '🙈'; } else { pwInput.type = 'password'; toggleIcon.innerText = '👁️'; } }
@@ -2649,7 +2697,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
     
     // Fetch global privacy setting and auto-apply it to the room!
-    if (currentUser && currentUser !== 'Guest') {
+    if (currentUser && currentUser !== 'Guest' && auth.currentUser) {
       db.collection('users').doc(auth.currentUser.uid).get().then(userDoc => {
         if (userDoc.exists) {
           const isGloballyPrivate = !!userDoc.data().isGloballyPrivate;
@@ -4570,47 +4618,76 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   // ----------------------------------------------------
   
   function handleProfileClick() {
-    if (currentUser === 'Guest' || !currentUser) {
-      openAuthModal();
-    } else {
-      openSettingsModal();
+    try {
+      if (currentUser === 'Guest' || !currentUser) {
+        openAuthModal();
+      } else {
+        openSettingsModal();
+      }
+    } catch (err) {
+      console.error("Error in handleProfileClick:", err);
+      try {
+        customAlert("Profile Click Error ⚠️", `An error occurred: <b>${err.message || err}</b>`);
+      } catch(alertErr) {
+        alert("Profile Click Error: " + (err.message || err));
+      }
     }
   }
   
   function openSettingsModal() {
-    document.getElementById('settingsModalOverlay').style.display = 'flex';
-    
-    // Sync toggles with current states
-    document.getElementById('settingsDarkModeToggle').checked = document.getElementById('darkModeToggle').checked;
-    document.getElementById('settingsMobileToggle').checked = document.getElementById('mobileViewToggle').checked;
-    
-    const settingsAccount = document.getElementById('settingsAccountSection');
-    const settingsActions = document.getElementById('settingsActionsSection');
-    const settingsGuest = document.getElementById('settingsGuestPrompt');
-    const usernameInput = document.getElementById('settingsUsernameInput');
-    const emailInput = document.getElementById('settingsEmailInput');
-    const passwordInput = document.getElementById('settingsPasswordInput');
-    
-    if (currentUser === 'Guest' || !currentUser) {
-      settingsAccount.style.display = 'none';
-      settingsActions.style.display = 'none';
-      settingsGuest.style.display = 'block';
-    } else {
-      settingsAccount.style.display = 'block';
-      settingsActions.style.display = 'flex';
-      settingsGuest.style.display = 'none';
+    try {
+      const settingsModal = document.getElementById('settingsModalOverlay');
+      if (settingsModal) settingsModal.style.display = 'flex';
       
-      usernameInput.value = currentUser;
-      passwordInput.value = '';
+      // Sync toggles with current states
+      const settingsDark = document.getElementById('settingsDarkModeToggle');
+      const mainDark = document.getElementById('darkModeToggle');
+      if (settingsDark && mainDark) settingsDark.checked = mainDark.checked;
       
-      const user = auth.currentUser;
-      if (user) {
-        emailInput.value = user.email || '';
-        db.collection('users').doc(user.uid).get().then(doc => {
-          if (doc.exists) {
-            document.getElementById('settingsGlobalPrivacyToggle').checked = !!doc.data().isGloballyPrivate;
-          }
-        });
+      const settingsMobile = document.getElementById('settingsMobileToggle');
+      const mainMobile = document.getElementById('mobileViewToggle');
+      if (settingsMobile && mainMobile) settingsMobile.checked = mainMobile.checked;
+      
+      const settingsAccount = document.getElementById('settingsAccountSection');
+      const settingsActions = document.getElementById('settingsActionsSection');
+      const settingsGuest = document.getElementById('settingsGuestPrompt');
+      const usernameInput = document.getElementById('settingsUsernameInput');
+      const emailInput = document.getElementById('settingsEmailInput');
+      const passwordInput = document.getElementById('settingsPasswordInput');
+      
+      if (currentUser === 'Guest' || !currentUser) {
+        if (settingsAccount) settingsAccount.style.display = 'none';
+        if (settingsActions) settingsActions.style.display = 'none';
+        if (settingsGuest) settingsGuest.style.display = 'block';
+      } else {
+        if (settingsAccount) settingsAccount.style.display = 'block';
+        if (settingsActions) settingsActions.style.display = 'flex';
+        if (settingsGuest) settingsGuest.style.display = 'none';
+        
+        if (usernameInput) usernameInput.value = currentUser;
+        if (passwordInput) passwordInput.value = '';
+        
+        const user = auth.currentUser;
+        if (user) {
+          if (emailInput) emailInput.value = user.email || '';
+          db.collection('users').doc(user.uid).get().then(doc => {
+            if (doc.exists) {
+              const privacyToggle = document.getElementById('settingsGlobalPrivacyToggle');
+              if (privacyToggle) privacyToggle.checked = !!doc.data().isGloballyPrivate;
+            }
+          }).catch(dbErr => {
+            console.warn("Could not retrieve global privacy setting:", dbErr);
+          });
+        } else {
+          if (emailInput) emailInput.value = '';
+        }
+      }
+    } catch (err) {
+      console.error("Error in openSettingsModal:", err);
+      try {
+        customAlert("Settings Modal Error ⚠️", `An error occurred: <b>${err.message || err}</b>`);
+      } catch(alertErr) {
+        alert("Settings Modal Error: " + (err.message || err));
       }
     }
   }
