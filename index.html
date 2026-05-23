@@ -576,6 +576,142 @@
     .hsl-slider::-moz-range-thumb:hover {
       transform: scale(1.2);
     }
+
+    /* Balanced Profile & Settings Buttons Size */
+    #circularProfileBtn, #globalHeaderBar button[onclick="openSettingsModal()"] {
+      width: 34px !important;
+      height: 34px !important;
+      min-width: 34px !important;
+      max-width: 34px !important;
+      font-size: 14px !important;
+      line-height: 34px !important;
+      padding: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    /* Prevent Checkbox/Radio Squishing */
+    input[type="radio"], input[type="checkbox"] {
+      flex-shrink: 0 !important;
+    }
+
+    /* Modern Auto-Hiding Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px !important;
+      height: 8px !important;
+      background: transparent !important;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: transparent !important;
+      border-radius: 8px !important;
+      transition: background 0.3s ease !important;
+    }
+    *:hover::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.2) !important;
+    }
+    *:hover::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.45) !important;
+    }
+    /* Firefox support */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+      transition: scrollbar-color 0.3s ease;
+    }
+    *:hover {
+      scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+    }
+
+    /* Refactored Bookmark Button Styles */
+    .bookmark-btn {
+      width: 42px !important;
+      height: 42px !important;
+      border-radius: 50% !important;
+      border: 1px solid var(--border) !important;
+      background: var(--surface) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      color: var(--text-light) !important;
+      padding: 0 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    }
+    .bookmark-btn svg {
+      width: 20px !important;
+      height: 20px !important;
+      fill: transparent !important;
+      stroke: var(--text-light) !important;
+      stroke-width: 2 !important;
+      transition: fill 0.2s, stroke 0.2s, transform 0.2s !important;
+    }
+    .bookmark-btn:hover {
+      transform: scale(1.1) rotate(15deg) !important;
+      border-color: var(--primary) !important;
+      color: var(--primary) !important;
+      background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+    }
+    .bookmark-btn:hover svg {
+      stroke: var(--primary) !important;
+    }
+    .bookmark-btn.pinned {
+      background: rgba(245, 158, 11, 0.1) !important;
+      border-color: #F59E0B !important;
+      color: #F59E0B !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.3) !important;
+    }
+    .bookmark-btn.pinned svg {
+      fill: #F59E0B !important;
+      stroke: #F59E0B !important;
+    }
+    .bookmark-btn.pinned:hover {
+      background: rgba(245, 158, 11, 0.2) !important;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.5) !important;
+    }
+
+    /* Mobile View Gutter and Padding Improvements */
+    @media (max-width: 600px) {
+      body {
+        padding: 16px 12px !important;
+      }
+      .container {
+        padding: 20px 16px !important;
+        border-radius: 16px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: calc(100% - 8px) !important;
+        box-sizing: border-box !important;
+      }
+      #globalHeaderBar {
+        margin-top: 10px !important;
+        margin-bottom: 20px !important;
+        padding: 10px 14px !important;
+        width: calc(100% - 8px) !important;
+        box-sizing: border-box !important;
+      }
+      /* Relaxed mobile tab labels */
+      .tabs {
+        gap: 16px !important;
+        padding-bottom: 8px !important;
+      }
+      .tab {
+        font-size: 14px !important;
+        padding: 8px 10px !important;
+      }
+      /* Additional specific padding enhancements */
+      .quiz-controls {
+        padding: 16px !important;
+        border-radius: 12px !important;
+      }
+      .option {
+        padding: 14px 16px !important;
+        margin: 10px 0 !important;
+        font-size: 14px !important;
+      }
+    }
   </style>
 
   <!-- Firebase Compat Libraries -->
@@ -1294,21 +1430,21 @@ async function exportRoomToGoogleDoc(roomId, subject, selectedPrintTags, usernam
     let optHtml = '';
     if (q.options && q.options.length > 0) {
       optHtml = q.options.map(o => `
-        <div style="font-size:13px; margin-top:5px; color:#000;">
+        <div style="font-size:11px; margin-top:3px; color:#000;">
           <strong>${o.letter.toUpperCase()})</strong> ${o.text}
         </div>
       `).join('');
     }
     
-    let imgHtml = q.imageUrl ? `<img style="max-width:250px; display:block; margin:6px 0; border:1px solid #ccc; border-radius:4px;" src="${q.imageUrl}">` : '';
+    let imgHtml = q.imageUrl ? `<img style="max-width:200px; display:block; margin:6px 0; border:1px solid #ccc; border-radius:4px;" src="${q.imageUrl}">` : '';
     
     qHtml += `
-      <div style="margin-bottom:18px; page-break-inside:avoid;">
-        <div style="font-size:14px; font-weight:bold; margin-bottom:6px; color:#000;">
+      <div style="margin-bottom:14px; page-break-inside:avoid;">
+        <div style="font-size:12px; font-weight:bold; margin-bottom:4px; color:#000;">
           <strong>${idx + 1}.</strong> ${q.text}
         </div>
         ${imgHtml}
-        <div style="margin-left:20px;">
+        <div style="margin-left:15px;">
           ${optHtml}
         </div>
       </div>
@@ -1321,39 +1457,69 @@ async function exportRoomToGoogleDoc(roomId, subject, selectedPrintTags, usernam
   });
   let keyHtml = '';
   for (let i = 0; i < keyItems.length; i += 10) {
-    keyHtml += `<div style="font-size:14px; margin-bottom:8px; text-align:center; color:#000;">${keyItems.slice(i, i + 10).join(',   ')}</div>`;
+    keyHtml += `<div style="font-size:12px; margin-bottom:6px; text-align:center; color:#000;">${keyItems.slice(i, i + 10).join(',   ')}</div>`;
   }
   
   const printPageContent = `
-    <!DOCTYPE html>
-    <html lang="en">
+    <html xmlns:o='urn:schemas-microsoft-com:office:office'
+          xmlns:w='urn:schemas-microsoft-com:office:word'
+          xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
       <meta charset="UTF-8">
       <title>${docTitle}</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
       <style>
-        body { font-family: 'Arial', sans-serif; color: #000; background: #fff; padding: 20px; line-height: 1.4; }
-        .page-break { page-break-before: always; }
+        @page Section1 {
+          size: 8.5in 11.0in;
+          margin: 0.75in;
+          mso-header-margin: .5in;
+          mso-footer-margin: .5in;
+          mso-paper-source: 0;
+          mso-columns: 2;
+          mso-column-gap: .25in;
+        }
+        div.Section1 {
+          page: Section1;
+        }
+        body { 
+          font-family: 'Arial', sans-serif; 
+          color: #000; 
+          background: #fff; 
+          font-size: 11pt;
+          line-height: 1.3; 
+        }
+        .page-break { 
+          page-break-before: always; 
+          clear: both;
+          mso-special-character: page-break;
+        }
       </style>
     </head>
     <body>
-      <div>
-        ${qHtml}
+      <div class="Section1">
+        <h2 style="text-align:center; font-size:16pt; margin-top:0; margin-bottom:20pt;">${docTitle}</h2>
+        <div>
+          ${qHtml}
+        </div>
+        <br clear="all" style="page-break-before:always; mso-special-character:page-break;" />
+        <div style="text-align:center; font-size:14pt; font-weight:bold; margin-top:20pt; border-bottom:1px solid #000; padding-bottom:6pt; color:#000;">ANSWER KEY</div>
+        <div style="margin-top:15pt;">
+          ${keyHtml}
+        </div>
       </div>
-      <div class="page-break"></div>
-      <div style="text-align:center; font-size:18px; font-weight:bold; margin:20px 0; border-bottom:1px solid #000; padding-bottom:6px; color:#000;">ANSWER KEY</div>
-      <div style="margin-top:20px;">
-        ${keyHtml}
-      </div>
-      <script>
-        window.onload = function() {
-          window.print();
-        };
-      <\/script>
     </body>
     </html>
   `;
   
-  const blob = new Blob([printPageContent], { type: 'text/html' });
+  const blob = new Blob(['\ufeff' + printPageContent], { type: 'application/msword' });
   const blobUrl = URL.createObjectURL(blob);
   
   return {
@@ -1849,6 +2015,93 @@ const backend = {
     const qSnap = await qRef.where('subject', '==', subject).get();
     let questions = [];
     qSnap.forEach(qDoc => questions.push(qDoc.data()));
+    
+    if (bankId.toUpperCase() === 'GLOBAL' && questions.length === 0) {
+      const tutorialQuestions = [
+        {
+          id: "tutorial_1",
+          subject: subject,
+          tag: "Guide Overview",
+          displayItemNumber: 1,
+          text: "Welcome to Boards Reviewer! How do you select study modes and start a session?",
+          correct: "b",
+          options: [
+            { letter: "a", text: "Toggle settings, choose a mode (Study Mode vs. Review Mistakes), and start typing." },
+            { letter: "b", text: "Select your Category tag at the top, choose a mode under 'Take Quiz', configure remaining settings, and tap 'Submit Answer'." },
+            { letter: "c", text: "Click 'Manage Bank' to start a session directly." },
+            { letter: "d", text: "Use keyboard shortcuts only." }
+          ],
+          rationale: "Select your Category in the dropdown (which you can also edit/pin using the settings gear next to it), then choose a mode. In 'Study Mode', you'll go through all questions, randomize them or keep them in Exam Order. If you get a question wrong, it goes into your 'Review Mistakes' bank automatically so you can practice it later! Double-click or press 'Got it' to continue."
+        },
+        {
+          id: "tutorial_2",
+          subject: subject,
+          tag: "PC Shortcuts",
+          displayItemNumber: 2,
+          text: "Which keyboard shortcuts are available to speed up your quiz practice on PC?",
+          options: [
+            { letter: "a", text: "Arrow keys only." },
+            { letter: "b", text: "Numbers 1-4 to select options A-D, and 'Enter' to submit/advance the question." },
+            { letter: "c", text: "Esc key to exit and Backspace to delete answers." },
+            { letter: "d", text: "Spacebar to skip and Alt+S to submit." }
+          ],
+          correct: "b",
+          rationale: "Pressing 1, 2, 3, or 4 on your keyboard (or A, B, C, D) instantly selects the corresponding option. Pressing 'Enter' submits the answer. If the question has been answered, pressing 'Enter' again moves to the next question automatically! ArrowRight skips the current question."
+        },
+        {
+          id: "tutorial_3",
+          subject: subject,
+          tag: "Theme Engine",
+          displayItemNumber: 3,
+          text: "How can you customize the look and feel of Boards Reviewer to make it visual and modern?",
+          options: [
+            { letter: "a", text: "Upload a CSS stylesheet file." },
+            { letter: "b", text: "Double-click the screen background." },
+            { letter: "c", text: "Click the 🎨 (Palette) icon in the settings or login modal to open the modern glassmorphic Color Picker card and adjust the HSL color sliders." },
+            { letter: "d", text: "Colors are fixed and cannot be changed." }
+          ],
+          correct: "c",
+          rationale: "Boards Reviewer features a fully dynamic, custom theme engine! By clicking the 🎨 color palette icon, you can drag the Hue, Saturation, and Lightness sliders to create any custom color theme. You can also toggle Dark Mode 🌙 with the sun/moon icon for maximum aesthetic comfort."
+        },
+        {
+          id: "tutorial_4",
+          subject: subject,
+          tag: "Study Tools",
+          displayItemNumber: 4,
+          text: "What is the Pinned ⭐ tab used for?",
+          options: [
+            { letter: "a", text: "It displays premium categories that are locked." },
+            { letter: "b", text: "It keeps a history of all questions you answered correctly." },
+            { letter: "c", text: "It lets you star difficult questions during a quiz by clicking the ⭐ button, which instantly puts them in a separate folder for targeted review." },
+            { letter: "d", text: "It is a settings configuration panel." }
+          ],
+          correct: "c",
+          rationale: "Clicking the ⭐ button on the top right of any question card saves it to your 'Pinned' tab. This lets you curate a custom set of high-priority questions to review together in one place."
+        },
+        {
+          id: "tutorial_5",
+          subject: subject,
+          tag: "Security & Privacy",
+          displayItemNumber: 5,
+          text: "How does user privacy work in joint rooms?",
+          options: [
+            { letter: "a", text: "Everyone can see all usernames and activity." },
+            { letter: "b", text: "By toggling 'Hide Username' in the settings or People tab, your username is masked as 'Private Member' to hosts and other students. Only the System Admin can see actual names." },
+            { letter: "c", text: "Room hosts can always view all names but regular students cannot." },
+            { letter: "d", text: "Privacy mode only hides emails, not usernames." }
+          ],
+          correct: "b",
+          rationale: "Boards Reviewer takes privacy extremely seriously! If you check 'Hide Username' under settings, your name is completely replaced by 'Private Member' for other students and even the Room Host. The platform Admin is the only one who can see full usernames for security management."
+        }
+      ];
+      
+      const batch = db.batch();
+      tutorialQuestions.forEach(q => {
+        batch.set(qRef.doc(q.id), q);
+      });
+      await batch.commit();
+      questions = tutorialQuestions;
+    }
     
     questions.sort((a, b) => {
       const tagA = a.tag || "Untagged";
@@ -2636,9 +2889,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         const isProtectedRoom = (roomId === 'GLOBAL');
         
         let deleteBtnHtml = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-danger btn-small" style="padding: 10px; width:100%;" onclick="deleteRoomAction('${roomId}')" title="Delete Room">🗑️ Delete</button>` : '';
-        let togglePrivacyBtn = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="toggleRoomPrivacy('${roomId}')" title="Toggle Public/Private">${isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>` : '';
-        let leaveBtnHtml = (filter === 'joined' && !isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="leaveJoinedRoomAction('${roomId}')" title="Leave Room">❌ Leave</button>` : '';
-        let editDashBtnHtml = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="openEditRoomModalFromDash('${roomId}')" title="Edit Room Details">✏️ Edit</button>` : '';
+        let togglePrivacyBtn = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="toggleRoomPrivacy('${roomId}')" title="Toggle Public/Private">${isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>` : '';
+        let leaveBtnHtml = (filter === 'joined' && !isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="leaveJoinedRoomAction('${roomId}')" title="Leave Room">❌ Leave</button>` : '';
+        let editDashBtnHtml = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="openEditRoomModalFromDash('${roomId}')" title="Edit Room Details">✏️ Edit</button>` : '';
         
         const displayDesc = data.description;
         const lockIcon = isPrivate ? '🔒 Private' : '🌐 Public';
@@ -2876,8 +3129,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const roomData = allRooms[currentRoomId];
     if (!roomData) return;
     
-    const isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin;
-    const isEditor = currentUser !== 'Guest' && roomData.permissions && (roomData.permissions[currentUser.toLowerCase()] === 'editor');
+    let isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin;
+    let isEditor = currentUser !== 'Guest' && roomData.permissions && (roomData.permissions[currentUser.toLowerCase()] === 'editor');
+    
+    // Protect Global Tutorial Room from modifications by regular users
+    if (currentRoomId === 'GLOBAL') {
+      isOwner = isAdmin;
+      isEditor = false;
+    }
+    
     hasRoomEditAccess = isOwner || isEditor;
     
     const showPrintBtn = isOwner || (roomData.allowPrint !== false);
@@ -2899,7 +3159,13 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       document.getElementById('toggleBulkManageBtn').style.display = 'none';
       document.getElementById('manageTagsBtn').style.display = 'none';
     }
-    document.getElementById('editCategoriesBtn').style.display = 'inline-block';
+    
+    // Disable Category management in global tutorial room
+    if (currentRoomId === 'GLOBAL') {
+      document.getElementById('editCategoriesBtn').style.display = 'none';
+    } else {
+      document.getElementById('editCategoriesBtn').style.display = 'inline-block';
+    }
     
     const activeTabPanel = document.querySelector('.panel.active');
     if (activeTabPanel) {
@@ -4473,15 +4739,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const sel = document.getElementById('subjectSelect'); 
     if (!sel || !sel.value) return;
     
-    const msg = `<b>Why Download directly? 🛡️</b><br><br>` +
-                `Connecting directly to your Google Drive folder requires granting full access permissions, which raises <b>major privacy & security concerns</b>.<br><br>` +
-                `Instead, we generate a high-fidelity <b>formatted Microsoft Word (.doc) file</b> of your exam.<br><br>` +
-                `<b>Easy Google Drive Save:</b><br>` +
-                `1. Click "Download" below to save the file.<br>` +
-                `2. Drag & drop the downloaded file directly into your preferred Google Drive folder!<br>` +
-                `3. Double-click it in Google Drive to open it as a fully editable Google Doc.`;
+    const msg = `Your Word Document (.doc) is ready for download.<br><br>Click <b>OK</b> to download the document file.`;
                 
-    customConfirm("Secure Document Export", msg, async () => {
+    customConfirm("Document Download", msg, async () => {
       showLoader(true);
       try {
         const res = await exportRoomToGoogleDoc(currentRoomId, sel.value, selectedPrintTags, currentUser, getSessionToken(), getRoomPassword(currentRoomId));
@@ -4494,7 +4754,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           a.click();
           document.body.removeChild(a);
           
-          customAlert("Export Complete 🎉", "Your formatted document has been downloaded. Drag it into your Google Drive folder to save as a Google Doc!");
+          customAlert("Success 🎉", "Your formatted document has been downloaded successfully!");
         } else {
           customAlert("Export Failed ❌", res.msg || "Unknown error.");
         }
@@ -4727,9 +4987,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     memberDataList.forEach(m => {
       const isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === room.creator.toLowerCase()) || isAdmin;
       const isSelf = (currentUser.toLowerCase() === m.username.toLowerCase());
+      const isSystemAdmin = isAdmin; // Only system 'admin' can see private usernames
       
       let displayName = formatUsername(m.username);
-      if (m.isPrivate && !isOwner && !isSelf) {
+      if (m.isPrivate && !isSelf && !isSystemAdmin) {
         displayName = "Private Member";
       }
       
@@ -4741,7 +5002,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       
       card.innerHTML = `
         <div class="people-info">
-          <div class="people-avatar" style="${m.isPrivate && !isOwner && !isSelf ? 'background: var(--text-light);' : ''}">${avatarChar}</div>
+          <div class="people-avatar" style="${m.isPrivate && !isSelf && !isSystemAdmin ? 'background: var(--text-light);' : ''}">${avatarChar}</div>
           <div class="people-details">
             <div class="people-name">
               <span>${displayName}</span>
@@ -4820,7 +5081,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       
       let displayUsername = formatUsername(m);
       const isPrivate = room.privacy && room.privacy[m] === true;
-      if (isPrivate) {
+      const isSystemAdmin = isAdmin; // Only system 'admin' can bypass privacy
+      if (isPrivate && m !== currentUser.toLowerCase() && !isSystemAdmin) {
+        displayUsername = "Private Member";
+      } else if (isPrivate) {
         displayUsername += ' <span style="font-size:11px; opacity:0.6;" title="Private to other members">🔒 Private</span>';
       }
       
@@ -4851,7 +5115,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function removeUserFromRoomAction(targetUser) {
-    customConfirm("Remove User", `Are you sure you want to remove user '${formatUsername(targetUser)}' from this room?`, () => {
+    const room = allRooms[currentRoomId];
+    const isPrivate = room && room.privacy && room.privacy[targetUser.toLowerCase()] === true;
+    const nameToDisplay = (isPrivate && targetUser.toLowerCase() !== currentUser.toLowerCase() && !isAdmin) ? "Private Member" : formatUsername(targetUser);
+    customConfirm("Remove User", `Are you sure you want to remove user '${nameToDisplay}' from this room?`, () => {
       showLoader(true);
       google.script.run.withSuccessHandler(res => {
         showLoader(false);
@@ -5105,36 +5372,42 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    showLoader(true);
     const user = auth.currentUser;
     if (!user) {
-      showLoader(false);
       customAlert("Error", "No user logged in.");
       return;
     }
     
-    try {
-      await user.updateEmail(newEmail);
-      
-      const batch = db.batch();
-      batch.update(db.collection('users').doc(user.uid), {
-        email: newEmail
-      });
-      batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
-        email: newEmail
-      });
-      await batch.commit();
-      
-      showLoader(false);
-      customAlert("Success", "Email updated successfully to: " + newEmail);
-    } catch (err) {
-      showLoader(false);
-      if (err.code === 'auth/requires-recent-login') {
-        customAlert("Re-authentication Required", "Please log out and log back in to update your email address for security reasons.");
-      } else {
-        customAlert("Error", "Failed to update email: " + err.message);
+    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize email update:", "password", async (password) => {
+      if (password === null) return;
+      if (password.trim() === '') {
+        customAlert("Wait", "Password is required to update your email.");
+        return;
       }
-    }
+      
+      showLoader(true);
+      try {
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
+        await user.reauthenticateWithCredential(credential);
+        
+        await user.updateEmail(newEmail);
+        
+        const batch = db.batch();
+        batch.update(db.collection('users').doc(user.uid), {
+          email: newEmail
+        });
+        batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
+          email: newEmail
+        });
+        await batch.commit();
+        
+        showLoader(false);
+        customAlert("Success", "Email updated successfully to: " + newEmail);
+      } catch (err) {
+        showLoader(false);
+        customAlert("Authentication Error", "Failed to update email: " + err.message);
+      }
+    });
   }
   
   async function updateAccountPassword() {
@@ -5145,27 +5418,33 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    showLoader(true);
     const user = auth.currentUser;
     if (!user) {
-      showLoader(false);
       customAlert("Error", "No user logged in.");
       return;
     }
     
-    try {
-      await user.updatePassword(newPassword);
-      showLoader(false);
-      input.value = '';
-      customAlert("Success", "Password updated successfully!");
-    } catch (err) {
-      showLoader(false);
-      if (err.code === 'auth/requires-recent-login') {
-        customAlert("Re-authentication Required", "Please log out and log back in to change your password for security reasons.");
-      } else {
-        customAlert("Error", "Failed to update password: " + err.message);
+    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize password update:", "password", async (password) => {
+      if (password === null) return;
+      if (password.trim() === '') {
+        customAlert("Wait", "Current password is required to change password.");
+        return;
       }
-    }
+      
+      showLoader(true);
+      try {
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
+        await user.reauthenticateWithCredential(credential);
+        
+        await user.updatePassword(newPassword);
+        showLoader(false);
+        input.value = '';
+        customAlert("Success", "Password updated successfully!");
+      } catch (err) {
+        showLoader(false);
+        customAlert("Authentication Error", "Failed to update password: " + err.message);
+      }
+    });
   }
   
   function openShareModal() {
