@@ -25,7 +25,8 @@
     }
 
     /* Declarative Body Scroll Lock when modals are open */
-    body:has(.custom-modal-overlay:not([style*="display: none"]):not([style="display: none"])) {
+    body:has(.custom-modal-overlay[style*="display: flex"]),
+    body:has(.custom-modal-overlay[style*="display: block"]) {
       overflow: hidden !important;
     }
 
