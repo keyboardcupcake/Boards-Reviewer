@@ -669,12 +669,20 @@
   </div>
 </div>
 
-<div id="globalHeaderBar" class="container top-control-bar" style="margin-top: 20px; margin-bottom: 20px; padding: 15px 30px;">
-    <div class="header-left"><div class="user-profile-btn" onclick="openAuthModal()"><span style="font-size: 16px;">👤</span> <span id="topBarUsername">Guest</span></div><button class="btn-outline btn-small" id="navDashBtn" onclick="leaveRoomToDashboard()" style="border: 1px solid var(--border); font-weight: 800; display:none;">⬅ Dashboard</button><button class="btn-outline btn-small" onclick="openTutorial()" style="border:none;">📘 Guide</button></div>
-    <div class="switch-group" id="headerCustomization">
-      <div class="color-picker"><div class="color-swatch custom-picker-swatch active" id="customPickerDashboard" onclick="toggleColorPickerCard(event, this)" style="background: var(--primary) !important; color: white !important; display: flex; align-items: center; justify-content: center; font-size: 14px; position: relative; cursor: pointer;" title="Custom Color">🎨</div></div>
-      <div class="switch-container" title="Dark Mode"><span style="font-size: 16px;">🌙</span><label class="switch"><input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()"><span class="slider"></span></label></div>
-      <div class="switch-container" id="mobileToggleWrapper" title="Compact Layout"><span style="font-size: 16px;">📱</span><label class="switch"><input type="checkbox" id="mobileViewToggle" onchange="toggleMobileView()"><span class="slider"></span></label></div>
+<div id="globalHeaderBar" class="container top-control-bar" style="margin-top: 20px; margin-bottom: 20px; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; background: var(--surface-alt); border: 1px solid var(--border);">
+    <div class="header-left" style="display: flex; align-items: center; gap: 10px;">
+      <button class="btn-outline btn-small" id="navDashBtn" onclick="leaveRoomToDashboard()" style="border: 1px solid var(--border); font-weight: 800; display:none; border-radius: 8px; padding: 8px 16px; width:auto; height:38px;">⬅ Dashboard</button>
+      <button class="btn-outline btn-small" onclick="openTutorial()" style="border:none; background:transparent; font-weight:700; padding: 8px 12px; width:auto; height:38px; color:var(--text);">📘 Guide</button>
+    </div>
+    <!-- Hidden toggles for compatibility and local syncs -->
+    <div style="display:none;">
+      <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+      <input type="checkbox" id="mobileViewToggle" onchange="toggleMobileView()">
+      <div class="custom-picker-swatch" id="customPickerDashboard"></div>
+    </div>
+    <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+      <div class="user-profile-btn" onclick="handleProfileClick()" title="Profile & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); user-select:none;" id="circularProfileBtn">👤</div>
+      <button class="btn-outline" onclick="openSettingsModal()" title="App & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); width:40px; min-width:40px;">⚙️</button>
     </div>
 </div>
 
@@ -695,6 +703,127 @@
     </div>
     <div id="loggedInProfile" style="display: none; text-align: center;">
         <p style="font-size: 16px; font-weight: 600; color: var(--text);">You are logged in as <span id="profileNameDisplay" style="color: var(--primary);"></span>.</p><p style="font-size: 14px; color: var(--text-light);">Your progress is safely auto-syncing to the cloud!</p><button class="btn-outline" id="manualSyncBtn" style="margin-top: 15px; border-color: var(--primary); color: var(--primary);" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore Progress)</button><button class="btn-danger" style="margin-top: 15px;" onclick="logoutUser()">Log Out</button>
+  </div>
+</div>
+
+<div id="settingsModalOverlay" class="custom-modal-overlay" style="align-items: flex-start; padding-top: 80px; display: none;">
+  <div class="custom-modal" style="text-align: left; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 500px; padding: 25px 30px; border-radius: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+      <h3 style="margin:0; color:var(--primary); font-size: 20px; font-weight:800; display:flex; align-items:center; gap:8px;">⚙️ Settings & Preferences</h3>
+      <button class="btn-outline btn-small" style="border:none; padding:4px; font-size:16px; background:transparent;" onclick="closeSettingsModal()">✖</button>
+    </div>
+    
+    <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+      <div style="margin-bottom: 25px;">
+        <h4 style="margin:0 0 12px 0; color:var(--text-light); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">🎨 App Preferences</h4>
+        <div style="display:flex; flex-direction:column; gap:14px; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px;">🌙 Dark Mode</span>
+            <label class="switch"><input type="checkbox" id="settingsDarkModeToggle" onchange="toggleSettingsDarkMode()"><span class="slider"></span></label>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px;">📱 Compact Mobile View</span>
+            <label class="switch"><input type="checkbox" id="settingsMobileToggle" onchange="toggleSettingsMobileView()"><span class="slider"></span></label>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+            <span style="font-weight:600; font-size:14px; margin-bottom:4px; display:flex; align-items:center; gap:8px;">🎨 Custom Theme Color</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div class="color-picker" style="display:flex; gap:6px; flex-wrap:wrap;">
+                <div class="color-swatch" onclick="applySwatchTheme('#6366F1')" style="background:#6366F1; width:24px; height:24px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-swatch" onclick="applySwatchTheme('#EC4899')" style="background:#EC4899; width:24px; height:24px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-swatch" onclick="applySwatchTheme('#10B981')" style="background:#10B981; width:24px; height:24px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-swatch" onclick="applySwatchTheme('#F59E0B')" style="background:#F59E0B; width:24px; height:24px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-swatch" onclick="applySwatchTheme('#3B82F6')" style="background:#3B82F6; width:24px; height:24px; border-radius:50%; cursor:pointer;"></div>
+              </div>
+              <button class="btn-outline btn-small" onclick="openAdvancedColorPicker(event)" style="padding:6px 12px; font-size:12px; height:auto; width:auto; border-radius:6px; font-weight:bold;">Advanced Picker</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="settingsAccountSection" style="display: none; margin-bottom: 25px;">
+        <h4 style="margin:0 0 12px 0; color:var(--text-light); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">👤 Account Settings</h4>
+        <div style="display:flex; flex-direction:column; gap:15px; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 4px;">
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;">🔒 Private Mode</span>
+              <span style="font-size:11px; color:var(--text-light);">Hide your name in all room member lists</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="settingsGlobalPrivacyToggle" onchange="toggleGlobalPrivacyPreference()"><span class="slider"></span></label>
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label style="font-size:11px;">Update Username</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="settingsUsernameInput" placeholder="New username..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+              <button class="btn-outline btn-small" onclick="updateAccountUsername()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+            </div>
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label style="font-size:11px;">Update Email</label>
+            <div style="display:flex; gap:8px;">
+              <input type="email" id="settingsEmailInput" placeholder="new-email@domain.com" style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+              <button class="btn-outline btn-small" onclick="updateAccountEmail()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+            </div>
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label style="font-size:11px;">Update Password</label>
+            <div style="display:flex; gap:8px;">
+              <input type="password" id="settingsPasswordInput" placeholder="New password..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+              <button class="btn-outline btn-small" onclick="updateAccountPassword()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="settingsGuestPrompt" style="display: block; margin-bottom: 25px; text-align:center; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
+        <p style="font-size:13px; color:var(--text-light); margin:0 0 10px 0;">Log in or Sign Up to unlock Cloud Sync, create private rooms, and customize your account settings!</p>
+        <button class="btn-success" onclick="closeSettingsModal(); openAuthModal();" style="font-size:13px; padding:8px 16px; width:auto; height:auto;">Log In / Register</button>
+      </div>
+      
+      <div id="settingsActionsSection" style="display:none; flex-direction:column; gap:10px;">
+        <button class="btn-outline" id="settingsManualSyncBtn" style="border-color: var(--primary); color: var(--primary); font-weight:bold; padding: 12px; font-size:14px; width:100%; border-radius:8px;" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore)</button>
+        <button class="btn-danger" style="padding: 12px; font-size:14px; font-weight:bold; width:100%; border-radius:8px;" onclick="logoutUserFromSettings()">Log Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="shareModalOverlay" class="custom-modal-overlay" style="align-items: flex-start; padding-top: 80px; display: none;">
+  <div class="custom-modal" style="text-align: left; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 480px; padding: 25px 30px; border-radius: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+      <h3 style="margin:0; color:var(--primary); font-size: 20px; font-weight:800; display:flex; align-items:center; gap:8px;">🔗 Share Room</h3>
+      <button class="btn-outline btn-small" style="border:none; padding:4px; font-size:16px; background:transparent;" onclick="closeShareModal()">✖</button>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-weight:700; font-size:14px; margin-bottom:6px; color:var(--text); display:flex; align-items:center; gap:6px;">🤝 Invite Link (Join as Member)</div>
+        <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-light);">Adds users as room Viewers automatically to track their scores and progress.</p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="shareInviteLinkInput" readonly style="flex:1; padding:8px 12px; font-size:13px; font-family:monospace; background:var(--surface-alt); border:1px solid var(--border); border-radius:8px;" onclick="this.select()">
+          <button class="btn-success btn-small" onclick="copyShareLink('shareInviteLinkInput')" style="font-weight:bold; padding:0 15px; border-radius:8px; white-space:nowrap; width:auto; height:38px;">📋 Copy</button>
+        </div>
+      </div>
+      
+      <div>
+        <div style="font-weight:700; font-size:14px; margin-bottom:6px; color:var(--text); display:flex; align-items:center; gap:6px;">🎮 Public Play Link (Guest Access)</div>
+        <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-light);">Allows anyone to play directly as Guest without registration or saving progress.</p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="sharePlayLinkInput" readonly style="flex:1; padding:8px 12px; font-size:13px; font-family:monospace; background:var(--surface-alt); border:1px solid var(--border); border-radius:8px;" onclick="this.select()">
+          <button class="btn-success btn-small" onclick="copyShareLink('sharePlayLinkInput')" style="font-weight:bold; padding:0 15px; border-radius:8px; white-space:nowrap; width:auto; height:38px;">📋 Copy</button>
+        </div>
+      </div>
+      
+      <div id="shareToggleWrapper" style="display:none; border-top:1px solid var(--border); padding-top:15px; margin-top:5px; justify-content:space-between; align-items:center; width:100%;">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-weight:600; font-size:13px; color:var(--text);">Allow viewers to share room</span>
+          <span style="font-size:11px; color:var(--text-light);">Members can generate invite & play links</span>
+        </div>
+        <label class="switch"><input type="checkbox" id="shareViewerToggle" onchange="toggleRoomViewerShareSettings()"><span class="slider"></span></label>
+      </div>
     </div>
   </div>
 </div>
@@ -903,11 +1032,17 @@ Here are my questions to format:
 
   <!-- People Tab Panel -->
   <div id="peopleTab" class="panel">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-      <h3 style="margin: 0; font-size: 20px;">👥 Room Members & Activity</h3>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" id="userPrivacyToggle" onchange="handlePrivacyToggle(this.checked)" style="width:18px; height:18px; margin:0; cursor:pointer; accent-color: var(--primary);">
-        <label for="userPrivacyToggle" style="margin:0; font-weight:600; cursor:pointer; font-size:13px; color:var(--text);" title="Hides your username from other members. Creator will still see your name in Permissions.">Keep my username private in this room</label>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+      <div>
+        <h3 style="margin: 0 0 5px 0; font-size: 20px;">👥 Room Members & Activity</h3>
+        <p style="margin:0; font-size:12px; color:var(--text-light);">See who is currently active in this study room.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <button id="roomShareBtn" class="btn-success btn-small" style="font-weight:bold; display: none; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; width:auto; height:auto;" onclick="openShareModal()">🔗 Share Room</button>
+        <div style="display: flex; align-items: center; gap: 6px; background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="userPrivacyToggle" onchange="handlePrivacyToggle(this.checked)" style="width:16px; height:16px; margin:0; cursor:pointer; accent-color: var(--primary);">
+          <label for="userPrivacyToggle" style="margin:0; font-weight:600; cursor:pointer; font-size:12px; color:var(--text);" title="Hides your username from other members. Creator will still see your name in Permissions.">Private Mode</label>
+        </div>
       </div>
     </div>
     <div class="people-list" id="peopleListContainer"></div>
@@ -1404,8 +1539,26 @@ const backend = {
   async joinAndRecordRoom(roomId, password, username, sessionToken) {
     const docKey = roomId.toUpperCase();
     const docRef = db.collection('rooms').doc(docKey);
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) return { success: false, msg: "Room not found." };
+    let docSnap = await docRef.get();
+    
+    if (!docSnap.exists) {
+      if (docKey === 'GLOBAL') {
+        const globalData = {
+          name: "Global Master Bank",
+          quizTitle: "Boards Reviewer",
+          description: "The core default question bank.",
+          creator: "admin",
+          isPublic: true,
+          password: "",
+          categories: ["General"],
+          permissions: {}
+        };
+        await docRef.set(globalData);
+        docSnap = await docRef.get();
+      } else {
+        return { success: false, msg: "Room not found." };
+      }
+    }
     
     const room = docSnap.data();
     const safeUsername = username ? username.toLowerCase() : "";
@@ -1444,11 +1597,29 @@ const backend = {
     if (username === 'Guest') return { success: false };
     const user = auth.currentUser;
     if (user) {
-      const ref = db.collection('users').doc(user.uid);
-      const profile = (await ref.get()).data() || {};
+      const userRef = db.collection('users').doc(user.uid);
+      const profile = (await userRef.get()).data() || {};
       let joined = profile.joinedRooms || ['GLOBAL'];
       joined = joined.filter(id => id !== roomId.toUpperCase());
-      await ref.update({ joinedRooms: joined });
+      await userRef.update({ joinedRooms: joined });
+      
+      const docKey = roomId.toUpperCase();
+      const docRef = db.collection('rooms').doc(docKey);
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        const room = docSnap.data();
+        if (room.permissions) {
+          const safeUser = username.toLowerCase();
+          delete room.permissions[safeUser];
+          if (room.lastActive) delete room.lastActive[safeUser];
+          if (room.privacy) delete room.privacy[safeUser];
+          await docRef.update({
+            permissions: room.permissions,
+            lastActive: room.lastActive || {},
+            privacy: room.privacy || {}
+          });
+        }
+      }
       return { success: true, joinedRooms: joined };
     }
     return { success: false };
@@ -1771,7 +1942,7 @@ const backend = {
   },
 
   async pingUserActivity(roomId, username, sessionToken) {
-    if (username === 'Guest') return { success: false };
+    if (username === 'Guest' || username.toLowerCase() === 'admin') return { success: false };
     const docRef = db.collection('rooms').doc(roomId.toUpperCase());
     const snap = await docRef.get();
     if (!snap.exists) return { success: false };
@@ -1936,7 +2107,36 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       customAlert("Connection Error", "Failed to connect to server: " + (err ? err.message || err : "Unknown Error")); 
     }).getRoomsData(currentUser, getSessionToken()); 
   }
-  function finalizeDashboardLoad() { if(document.getElementById('dashboardView')) document.getElementById('dashboardView').style.display = 'block'; if(document.getElementById('mainAppView')) document.getElementById('mainAppView').style.display = 'none'; if(document.getElementById('navDashBtn')) document.getElementById('navDashBtn').style.display = 'none'; document.getElementById('topBarUsername').innerText = currentUser || 'Guest'; const restrictedTabs = ['tabMyRooms', 'tabCreateRoom']; restrictedTabs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (currentUser === 'Guest') ? 'none' : ''; }); if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none'; switchRoomTab('public'); }
+  function finalizeDashboardLoad() {
+    if(document.getElementById('dashboardView')) document.getElementById('dashboardView').style.display = 'block';
+    if(document.getElementById('mainAppView')) document.getElementById('mainAppView').style.display = 'none';
+    if(document.getElementById('navDashBtn')) document.getElementById('navDashBtn').style.display = 'none';
+    
+    // Sync the top circular profile button color if custom picker exists
+    const profileBtn = document.getElementById('circularProfileBtn');
+    if (profileBtn) {
+      if (currentUser !== 'Guest' && currentUser !== '') {
+        profileBtn.style.background = 'var(--primary)';
+        profileBtn.style.color = '#ffffff';
+        profileBtn.style.borderColor = 'var(--primary-hover)';
+        profileBtn.innerText = currentUser.charAt(0).toUpperCase();
+      } else {
+        profileBtn.style.background = 'var(--surface)';
+        profileBtn.style.color = 'var(--text)';
+        profileBtn.style.borderColor = 'var(--border)';
+        profileBtn.innerText = '👤';
+      }
+    }
+    
+    const restrictedTabs = ['tabMyRooms', 'tabCreateRoom'];
+    restrictedTabs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = (currentUser === 'Guest') ? 'none' : '';
+    });
+    if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none';
+    switchRoomTab('public');
+    handleUrlParams();
+  }
 
   function openAuthModal() { document.getElementById('authErrorText').style.display = 'none'; if (currentUser !== 'Guest' && currentUser !== '') { document.getElementById('authForms').style.display = 'none'; document.getElementById('loggedInProfile').style.display = 'block'; document.getElementById('profileNameDisplay').innerText = currentUser === 'Admin' ? 'Master Admin' : currentUser; document.getElementById('manualSyncBtn').style.display = 'inline-block'; const closeBtn = document.getElementById('authCloseBtn'); if(closeBtn) closeBtn.style.display = 'block'; } else { document.getElementById('authForms').style.display = 'block'; document.getElementById('loggedInProfile').style.display = 'none'; document.getElementById('manualSyncBtn').style.display = 'none'; const closeBtn = document.getElementById('authCloseBtn'); if(currentUser === 'Guest') { if(closeBtn) closeBtn.style.display = 'block'; } else { if(closeBtn) closeBtn.style.display = 'none'; } } document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authModalOverlay').style.display = 'flex'; }
   function closeAuthModal() { if(currentUser) document.getElementById('authModalOverlay').style.display = 'none'; }
@@ -2300,6 +2500,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         showLoader(false); 
         if(res.success) { 
           currentUserJoinedRooms = res.joinedRooms || []; 
+          if (allRooms[roomId] && allRooms[roomId].permissions) {
+            delete allRooms[roomId].permissions[currentUser.toLowerCase()];
+          }
           renderRoomList('joined'); 
         } 
       }).leaveJoinedRoom(roomId, currentUser, getSessionToken());
@@ -2325,9 +2528,45 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       activityPingInterval = null;
     }
     
+    // Fetch global privacy setting and auto-apply it to the room!
+    if (currentUser && currentUser !== 'Guest') {
+      db.collection('users').doc(auth.currentUser.uid).get().then(userDoc => {
+        if (userDoc.exists) {
+          const isGloballyPrivate = !!userDoc.data().isGloballyPrivate;
+          if (isGloballyPrivate && roomId.toUpperCase() !== 'GLOBAL') {
+            const roomRef = db.collection('rooms').doc(roomId.toUpperCase());
+            roomRef.get().then(snap => {
+              if (snap.exists) {
+                const room = snap.data();
+                if (!room.privacy) room.privacy = {};
+                if (!room.privacy[currentUser.toLowerCase()]) {
+                  room.privacy[currentUser.toLowerCase()] = true;
+                  roomRef.update({ privacy: room.privacy });
+                }
+              }
+            });
+          }
+        }
+      });
+    }
+
     // Set up real-time listener on active room document in Firestore
     if (currentUser && currentUser !== 'Guest') {
-      currentRoomListenerUnsubscribe = db.collection('rooms').doc(roomId.toUpperCase()).onSnapshot(doc => {
+      currentRoomListenerUnsubscribe = db.collection('rooms').doc(roomId.toUpperCase()).onSnapshot(async doc => {
+        if (!doc.exists && roomId.toUpperCase() === 'GLOBAL') {
+          const globalData = {
+            name: "Global Master Bank",
+            quizTitle: "Boards Reviewer",
+            description: "The core default question bank.",
+            creator: "admin",
+            isPublic: true,
+            password: "",
+            categories: ["General"],
+            permissions: {}
+          };
+          await db.collection('rooms').doc('GLOBAL').set(globalData);
+          return;
+        }
         if (doc.exists) {
           const roomData = doc.data();
           const safeUsername = currentUser ? currentUser.toLowerCase() : "";
@@ -3067,7 +3306,72 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function toggleStatsVisibility() { const showScore = document.getElementById('showScoreToggle').checked; const showTimer = document.getElementById('showTimerToggle').checked; const showRemaining = document.getElementById('showRemainingToggle').checked; const mode = document.querySelector('input[name="mode"]:checked').value; document.getElementById('scoreWrapper').style.display = showScore ? 'block' : 'none'; document.getElementById('timerWrapper').style.display = showTimer ? 'block' : 'none'; const isRemainingVisible = showRemaining && (mode === 'session'); document.getElementById('remainingWrapper').style.display = isRemainingVisible ? 'block' : 'none'; if (!showScore && !showTimer && !isRemainingVisible) { document.getElementById('statsBar').style.display = 'none'; } else { document.getElementById('statsBar').style.display = 'flex'; } }
   function toggleModeSettings() { const mode = document.querySelector('input[name="mode"]:checked').value; const optionsDiv = document.getElementById('studyModeOptions'); if (mode !== 'session') { optionsDiv.style.opacity = '0.4'; optionsDiv.style.pointerEvents = 'none'; } else { optionsDiv.style.opacity = '1'; optionsDiv.style.pointerEvents = 'auto'; } handleTagSwitch(); }
-  function buildQueue() { const subjectSelect = document.getElementById('subjectSelect'); if(!subjectSelect || !subjectSelect.value) return; const subject = subjectSelect.value; const pKey = initSubjectMemory(subject); const mode = document.querySelector('input[name="mode"]:checked').value; const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value; const selectedTag = document.getElementById('tagFilter').value; filteredQs = currentQuestions; if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag); if (mode === 'mistakes') { filteredQs = filteredQs.filter(q => seenQuestions[currentRoomId][subject].mistakes && seenQuestions[currentRoomId][subject].mistakes[q.id] === true); } let baseQueue = []; if (mode === 'session') { baseQueue = filteredQs.filter(q => !seenQuestions[currentRoomId][subject][pKey][q.id]).map(q => q.id); } else { baseQueue = filteredQs.map(q => q.id); } if (studyOrder === 'random' && mode !== 'mistakes') { let groups = {}; let standalone = []; baseQueue.forEach(id => { let q = filteredQs.find(x => x.id === id); if (q && q.linkGroup && q.linkGroup.trim() !== '') { if (!groups[q.linkGroup]) groups[q.linkGroup] = []; groups[q.linkGroup].push(id); } else { standalone.push([id]); } }); let allGroups = Object.values(groups).concat(standalone); for (let i = allGroups.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allGroups[i], allGroups[j]] = [allGroups[j], allGroups[i]]; } pendingQueue = []; allGroups.forEach(g => { g.sort((a,b) => { let qa = filteredQs.find(x => x.id === a); let qb = filteredQs.find(x => x.id === b); return qa.displayItemNumber - qb.displayItemNumber; }); pendingQueue.push(...g); }); } else { pendingQueue = baseQueue.sort((a,b) => { let qa = filteredQs.find(x => x.id === a); let qb = filteredQs.find(x => x.id === b); if (qa.tag !== qb.tag) { return (qa.tag || "").localeCompare(qb.tag || ""); } return qa.displayItemNumber - qb.displayItemNumber; }); } }
+  function buildQueue() {
+    const subjectSelect = document.getElementById('subjectSelect');
+    if(!subjectSelect || !subjectSelect.value) return;
+    const subject = subjectSelect.value;
+    const pKey = initSubjectMemory(subject);
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value;
+    const selectedTag = document.getElementById('tagFilter').value;
+    
+    filteredQs = currentQuestions;
+    if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag);
+    
+    if (mode === 'mistakes') {
+      filteredQs = filteredQs.filter(q => seenQuestions[currentRoomId][subject].mistakes && seenQuestions[currentRoomId][subject].mistakes[q.id] === true);
+    }
+    
+    let baseQueue = [];
+    if (mode === 'session') {
+      baseQueue = filteredQs.filter(q => !seenQuestions[currentRoomId][subject][pKey][q.id]).map(q => q.id);
+    } else {
+      baseQueue = filteredQs.map(q => q.id);
+    }
+    
+    if (studyOrder === 'random' && mode !== 'mistakes') {
+      let groups = {};
+      let standalone = [];
+      baseQueue.forEach(id => {
+        let q = filteredQs.find(x => x.id === id);
+        if (q && q.linkGroup && q.linkGroup.trim() !== '') {
+          if (!groups[q.linkGroup]) groups[q.linkGroup] = [];
+          groups[q.linkGroup].push(id);
+        } else {
+          standalone.push([id]);
+        }
+      });
+      let allGroups = Object.values(groups).concat(standalone);
+      for (let i = allGroups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allGroups[i], allGroups[j]] = [allGroups[j], allGroups[i]];
+      }
+      pendingQueue = [];
+      allGroups.forEach(g => {
+        g.sort((a,b) => {
+          let qa = filteredQs.find(x => x.id === a);
+          let qb = filteredQs.find(x => x.id === b);
+          return qa.displayItemNumber - qb.displayItemNumber;
+        });
+        pendingQueue.push(...g);
+      });
+    } else {
+      pendingQueue = baseQueue.sort((a,b) => {
+        let qa = filteredQs.find(x => x.id === a);
+        let qb = filteredQs.find(x => x.id === b);
+        if (qa.tag !== qb.tag) {
+          return (qa.tag || "").localeCompare(qb.tag || "");
+        }
+        return qa.displayItemNumber - qb.displayItemNumber;
+      });
+      if (mode === 'mistakes') {
+        for (let i = pendingQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pendingQueue[i], pendingQueue[j]] = [pendingQueue[j], pendingQueue[i]];
+        }
+      }
+    }
+  }
   function restartSession() { 
     customConfirm("Reset Group Progress", "Are you sure you want to reset your score and progress for this group and mode?", () => { 
       const subject = document.getElementById('subjectSelect').value; 
@@ -3145,7 +3449,30 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       renderQuestion(); 
     } 
   }
-  function generateNextQuestion() { const mode = document.querySelector('input[name="mode"]:checked').value; if (mode !== 'session' && pendingQueue.length === 0) buildQueue(); if(pendingQueue.length === 0) { exitImmersiveMode(); customAlert("Quiz Complete 🎉", `You've finished this set!\n\nFinal Score: ${sessionScore} / ${sessionAttempted}\n\nClick 'Start Quiz / Resume Session' to enter Review Mode, or click Reset Progress to restart.`); return; } const nextId = pendingQueue.shift(); goToQuestion(nextId); }
+  function generateNextQuestion() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    if (mode !== 'session' && pendingQueue.length === 0) {
+      buildQueue();
+      if (mode === 'mistakes' && pendingQueue.length > 0) {
+        for (let i = pendingQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pendingQueue[i], pendingQueue[j]] = [pendingQueue[j], pendingQueue[i]];
+        }
+        customAlert("Mistakes Remaining", `You still have ${pendingQueue.length} mistakes remaining. Let's reshuffle and try them again!`);
+      }
+    }
+    if(pendingQueue.length === 0) {
+      exitImmersiveMode();
+      if (mode === 'mistakes') {
+        customAlert("Quiz Complete 🎉", "Congratulations! You've successfully corrected all your mistakes!");
+      } else {
+        customAlert("Quiz Complete 🎉", `You've finished this set!\n\nFinal Score: ${sessionScore} / ${sessionAttempted}\n\nClick 'Start Quiz / Resume Session' to enter Review Mode, or click Reset Progress to restart.`);
+      }
+      return;
+    }
+    const nextId = pendingQueue.shift();
+    goToQuestion(nextId);
+  }
   function goToQuestion(id) { if (currentHistoryIndex < sessionHistory.length - 1) { sessionHistory = sessionHistory.slice(0, currentHistoryIndex + 1); } pendingQueue = pendingQueue.filter(pid => pid !== id); sessionHistory.push(id); currentHistoryIndex++; currentQuestionObj = filteredQs.find(q => q.id === id); saveSessionState(); renderQuestion(); }
   function goForward() { if (currentHistoryIndex < sessionHistory.length - 1) { currentHistoryIndex++; currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]); saveSessionState(); renderQuestion(); } else { generateNextQuestion(); } }
   function goBack() { if (currentHistoryIndex > 0) { currentHistoryIndex--; currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]); saveSessionState(); renderQuestion(); } }
@@ -3879,7 +4206,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     if (room.privacy) {
       Object.keys(room.privacy).forEach(u => members.add(u.toLowerCase()));
     }
-    return Array.from(members);
+    return Array.from(members).filter(u => u !== 'admin');
   }
 
   function formatUsername(name) {
@@ -3895,6 +4222,19 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     
     const room = allRooms[currentRoomId];
     if (!room) return;
+    
+    // Show/hide Share button based on permissions
+    const shareBtn = document.getElementById('roomShareBtn');
+    if (shareBtn) {
+      const isOwnerOrEditor = (currentUser !== 'Guest' && currentUser !== '' && (room.creator.toLowerCase() === currentUser.toLowerCase() || (room.permissions && room.permissions[currentUser.toLowerCase()] === 'editor'))) || isAdmin;
+      const allowViewerShare = room.allowViewerShare !== false;
+      
+      if (isOwnerOrEditor || allowViewerShare) {
+        shareBtn.style.display = 'flex';
+      } else {
+        shareBtn.style.display = 'none';
+      }
+    }
     
     const privacyToggle = document.getElementById('userPrivacyToggle');
     if (privacyToggle) {
@@ -4103,6 +4443,339 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       showLoader(false);
       customAlert("Error", "Failed to add user to room.");
     }).addUserToRoom(currentRoomId, targetUser, currentUser, getSessionToken());
+  }
+
+  // ----------------------------------------------------
+  // Profile, Settings, Sharing, and URL Router Engines
+  // ----------------------------------------------------
+  
+  function handleProfileClick() {
+    if (currentUser === 'Guest' || !currentUser) {
+      openAuthModal();
+    } else {
+      openSettingsModal();
+    }
+  }
+  
+  function openSettingsModal() {
+    document.getElementById('settingsModalOverlay').style.display = 'flex';
+    
+    // Sync toggles with current states
+    document.getElementById('settingsDarkModeToggle').checked = document.getElementById('darkModeToggle').checked;
+    document.getElementById('settingsMobileToggle').checked = document.getElementById('mobileViewToggle').checked;
+    
+    const settingsAccount = document.getElementById('settingsAccountSection');
+    const settingsActions = document.getElementById('settingsActionsSection');
+    const settingsGuest = document.getElementById('settingsGuestPrompt');
+    const usernameInput = document.getElementById('settingsUsernameInput');
+    const emailInput = document.getElementById('settingsEmailInput');
+    const passwordInput = document.getElementById('settingsPasswordInput');
+    
+    if (currentUser === 'Guest' || !currentUser) {
+      settingsAccount.style.display = 'none';
+      settingsActions.style.display = 'none';
+      settingsGuest.style.display = 'block';
+    } else {
+      settingsAccount.style.display = 'block';
+      settingsActions.style.display = 'flex';
+      settingsGuest.style.display = 'none';
+      
+      usernameInput.value = currentUser;
+      passwordInput.value = '';
+      
+      const user = auth.currentUser;
+      if (user) {
+        emailInput.value = user.email || '';
+        db.collection('users').doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            document.getElementById('settingsGlobalPrivacyToggle').checked = !!doc.data().isGloballyPrivate;
+          }
+        });
+      }
+    }
+  }
+  
+  function closeSettingsModal() {
+    document.getElementById('settingsModalOverlay').style.display = 'none';
+    const picker = document.getElementById('modernColorPickerCard');
+    if (picker) picker.style.display = 'none';
+  }
+  
+  function toggleSettingsDarkMode() {
+    const mainToggle = document.getElementById('darkModeToggle');
+    if (mainToggle) {
+      mainToggle.checked = document.getElementById('settingsDarkModeToggle').checked;
+      toggleDarkMode();
+    }
+  }
+  
+  function toggleSettingsMobileView() {
+    const mainToggle = document.getElementById('mobileViewToggle');
+    if (mainToggle) {
+      mainToggle.checked = document.getElementById('settingsMobileToggle').checked;
+      toggleMobileView();
+    }
+  }
+  
+  function applySwatchTheme(color) {
+    applyColor(color);
+  }
+  
+  function openAdvancedColorPicker(event) {
+    toggleColorPickerCard(event, event.currentTarget);
+  }
+  
+  function logoutUserFromSettings() {
+    closeSettingsModal();
+    logoutUser();
+  }
+  
+  async function toggleGlobalPrivacyPreference() {
+    const checked = document.getElementById('settingsGlobalPrivacyToggle').checked;
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    try {
+      await db.collection('users').doc(user.uid).update({ isGloballyPrivate: checked });
+      
+      if (currentRoomId && currentRoomId !== 'GLOBAL') {
+        const roomRef = db.collection('rooms').doc(currentRoomId.toUpperCase());
+        const snap = await roomRef.get();
+        if (snap.exists) {
+          const room = snap.data();
+          if (!room.privacy) room.privacy = {};
+          if (checked) {
+            room.privacy[currentUser.toLowerCase()] = true;
+          } else {
+            delete room.privacy[currentUser.toLowerCase()];
+          }
+          await roomRef.update({ privacy: room.privacy });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update global privacy preference:", err);
+    }
+  }
+  
+  async function updateAccountUsername() {
+    const input = document.getElementById('settingsUsernameInput');
+    const newUsername = input.value.trim();
+    if (!newUsername) {
+      customAlert("Wait", "Username cannot be empty.");
+      return;
+    }
+    if (newUsername.toLowerCase() === currentUser.toLowerCase()) {
+      customAlert("Info", "This is already your username.");
+      return;
+    }
+    if (newUsername.toLowerCase() === 'admin') {
+      customAlert("Error", "Reserved username.");
+      return;
+    }
+    
+    showLoader(true);
+    const user = auth.currentUser;
+    if (!user) {
+      showLoader(false);
+      customAlert("Error", "No user logged in.");
+      return;
+    }
+    
+    const newLower = newUsername.toLowerCase();
+    const oldLower = currentUser.toLowerCase();
+    
+    try {
+      const usernameDoc = await db.collection('usernames').doc(newLower).get();
+      if (usernameDoc.exists) {
+        showLoader(false);
+        customAlert("Error", "Username already exists!");
+        return;
+      }
+      
+      const batch = db.batch();
+      batch.delete(db.collection('usernames').doc(oldLower));
+      batch.set(db.collection('usernames').doc(newLower), {
+        uid: user.uid,
+        email: user.email,
+        username: newUsername
+      });
+      batch.update(db.collection('users').doc(user.uid), {
+        username: newUsername
+      });
+      
+      await batch.commit();
+      
+      currentUser = newUsername;
+      document.getElementById('topBarUsername').innerText = newUsername;
+      document.getElementById('profileNameDisplay').innerText = newUsername;
+      
+      const profileBtn = document.getElementById('circularProfileBtn');
+      if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
+      
+      showLoader(false);
+      customAlert("Success", "Username updated successfully to: " + newUsername);
+    } catch (err) {
+      showLoader(false);
+      customAlert("Error", "Failed to update username: " + err.message);
+    }
+  }
+  
+  async function updateAccountEmail() {
+    const input = document.getElementById('settingsEmailInput');
+    const newEmail = input.value.trim();
+    if (!newEmail) {
+      customAlert("Wait", "Email cannot be empty.");
+      return;
+    }
+    
+    showLoader(true);
+    const user = auth.currentUser;
+    if (!user) {
+      showLoader(false);
+      customAlert("Error", "No user logged in.");
+      return;
+    }
+    
+    try {
+      await user.updateEmail(newEmail);
+      
+      const batch = db.batch();
+      batch.update(db.collection('users').doc(user.uid), {
+        email: newEmail
+      });
+      batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
+        email: newEmail
+      });
+      await batch.commit();
+      
+      showLoader(false);
+      customAlert("Success", "Email updated successfully to: " + newEmail);
+    } catch (err) {
+      showLoader(false);
+      if (err.code === 'auth/requires-recent-login') {
+        customAlert("Re-authentication Required", "Please log out and log back in to update your email address for security reasons.");
+      } else {
+        customAlert("Error", "Failed to update email: " + err.message);
+      }
+    }
+  }
+  
+  async function updateAccountPassword() {
+    const input = document.getElementById('settingsPasswordInput');
+    const newPassword = input.value.trim();
+    if (!newPassword || newPassword.length < 6) {
+      customAlert("Wait", "Password must be at least 6 characters.");
+      return;
+    }
+    
+    showLoader(true);
+    const user = auth.currentUser;
+    if (!user) {
+      showLoader(false);
+      customAlert("Error", "No user logged in.");
+      return;
+    }
+    
+    try {
+      await user.updatePassword(newPassword);
+      showLoader(false);
+      input.value = '';
+      customAlert("Success", "Password updated successfully!");
+    } catch (err) {
+      showLoader(false);
+      if (err.code === 'auth/requires-recent-login') {
+        customAlert("Re-authentication Required", "Please log out and log back in to change your password for security reasons.");
+      } else {
+        customAlert("Error", "Failed to update password: " + err.message);
+      }
+    }
+  }
+  
+  function openShareModal() {
+    document.getElementById('shareModalOverlay').style.display = 'flex';
+    
+    const origin = window.location.origin + window.location.pathname;
+    const inviteLink = origin + '?invite=' + currentRoomId;
+    const playLink = origin + '?play=' + currentRoomId;
+    
+    document.getElementById('shareInviteLinkInput').value = inviteLink;
+    document.getElementById('sharePlayLinkInput').value = playLink;
+    
+    const shareToggle = document.getElementById('shareToggleWrapper');
+    const room = allRooms[currentRoomId];
+    if (room && shareToggle) {
+      const isOwnerOrEditor = (currentUser !== 'Guest' && currentUser !== '' && (room.creator.toLowerCase() === currentUser.toLowerCase() || (room.permissions && room.permissions[currentUser.toLowerCase()] === 'editor'))) || isAdmin;
+      if (isOwnerOrEditor) {
+        shareToggle.style.display = 'flex';
+        document.getElementById('shareViewerToggle').checked = room.allowViewerShare !== false;
+      } else {
+        shareToggle.style.display = 'none';
+      }
+    }
+  }
+  
+  function closeShareModal() {
+    document.getElementById('shareModalOverlay').style.display = 'none';
+  }
+  
+  function copyShareLink(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.select();
+      input.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+      customAlert("Copied", "Link copied successfully!");
+    }
+  }
+  
+  async function toggleRoomViewerShareSettings() {
+    const checked = document.getElementById('shareViewerToggle').checked;
+    if (!currentRoomId) return;
+    
+    try {
+      const roomRef = db.collection('rooms').doc(currentRoomId.toUpperCase());
+      await roomRef.update({ allowViewerShare: checked });
+      allRooms[currentRoomId].allowViewerShare = checked;
+    } catch (err) {
+      customAlert("Error", "Failed to update viewer share permissions: " + err.message);
+    }
+  }
+  
+  function handleUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteRoomId = urlParams.get('invite');
+    const playRoomId = urlParams.get('play');
+    
+    if (inviteRoomId || playRoomId) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (inviteRoomId) {
+      const targetRoom = inviteRoomId.toUpperCase();
+      if (currentUser === 'Guest') {
+        customConfirm("Invite Link", `You have been invited to join the room '${targetRoom}'.\n\nWould you like to register/login to save progress, or Play as Guest to view immediately?`, () => {
+          openAuthModal();
+        }, () => {
+          if (!currentUserJoinedRooms.includes(targetRoom)) {
+            currentUserJoinedRooms.push(targetRoom);
+            localStorage.setItem('psych_guest_joined_rooms', JSON.stringify(currentUserJoinedRooms));
+          }
+          loadRoomIntoMainApp(targetRoom);
+        }, "Log In / Sign Up", "Play as Guest");
+      } else {
+        executeJoinWithPassword(targetRoom, "");
+      }
+    } else if (playRoomId) {
+      const targetRoom = playRoomId.toUpperCase();
+      if (currentUser === 'Guest') {
+        if (!currentUserJoinedRooms.includes(targetRoom)) {
+          currentUserJoinedRooms.push(targetRoom);
+          localStorage.setItem('psych_guest_joined_rooms', JSON.stringify(currentUserJoinedRooms));
+        }
+      }
+      loadRoomIntoMainApp(targetRoom);
+      customAlert("Public Play Mode", `Welcome! You are playing room '${targetRoom}' in Public Play Mode. Your progress will not be saved.`);
+    }
   }
 
   // Real-time localStorage state synchronization across tabs to prevent bleeding
