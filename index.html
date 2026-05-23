@@ -1132,6 +1132,25 @@ Here are my questions to format:
 </div>
 
 <script>
+  // Global Uncaught Error Banner Diagnostic
+  window.addEventListener('error', function(e) {
+    console.error("Uncaught Runtime Error:", e);
+    try {
+      customAlert("Application Error ⚠️", `A runtime error occurred: <b>${e.message}</b><br><br><small style="opacity:0.7; font-family:monospace;">At ${e.filename || 'index.html'}:${e.lineno}:${e.colno}</small>`);
+    } catch (alertErr) {
+      alert("Application Error: " + e.message + "\n\nAt " + e.filename + ":" + e.lineno);
+    }
+  });
+  
+  window.addEventListener('unhandledrejection', function(e) {
+    console.error("Unhandled Promise Rejection:", e);
+    try {
+      customAlert("Database/Network Error 🌐", `A background operation failed: <b>${e.reason ? e.reason.message || e.reason : 'Unknown Error'}</b>`);
+    } catch (alertErr) {
+      alert("Operation Error: " + (e.reason ? e.reason.message || e.reason : 'Unknown Error'));
+    }
+  });
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBQPoT_zx8omeQGg6TjnQ-tmte76ICafhs",
@@ -2064,8 +2083,25 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     fetchRoomsAndLoadDashboard();
   }
 
+  let firebaseAuthListenerUnsubscribe = null;
+  let hasWaitedForAuth = false;
   function fetchRoomsAndLoadDashboard() { 
     showLoader(true); 
+    
+    // If the auth session is not yet loaded, wait for auth to initialize once
+    if (currentUser && currentUser !== 'Guest' && !auth.currentUser && !hasWaitedForAuth) {
+      hasWaitedForAuth = true;
+      if (firebaseAuthListenerUnsubscribe) firebaseAuthListenerUnsubscribe();
+      firebaseAuthListenerUnsubscribe = auth.onAuthStateChanged(user => {
+        if (firebaseAuthListenerUnsubscribe) {
+          firebaseAuthListenerUnsubscribe();
+          firebaseAuthListenerUnsubscribe = null;
+        }
+        fetchRoomsAndLoadDashboard();
+      });
+      return;
+    }
+
     google.script.run.withSuccessHandler(rooms => { 
       allRooms = rooms || {}; 
       if (currentUser && currentUser !== 'Guest') { 
@@ -2108,34 +2144,42 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }).getRoomsData(currentUser, getSessionToken()); 
   }
   function finalizeDashboardLoad() {
-    if(document.getElementById('dashboardView')) document.getElementById('dashboardView').style.display = 'block';
-    if(document.getElementById('mainAppView')) document.getElementById('mainAppView').style.display = 'none';
-    if(document.getElementById('navDashBtn')) document.getElementById('navDashBtn').style.display = 'none';
-    
-    // Sync the top circular profile button color if custom picker exists
-    const profileBtn = document.getElementById('circularProfileBtn');
-    if (profileBtn) {
-      if (currentUser !== 'Guest' && currentUser !== '') {
-        profileBtn.style.background = 'var(--primary)';
-        profileBtn.style.color = '#ffffff';
-        profileBtn.style.borderColor = 'var(--primary-hover)';
-        profileBtn.innerText = currentUser.charAt(0).toUpperCase();
-      } else {
-        profileBtn.style.background = 'var(--surface)';
-        profileBtn.style.color = 'var(--text)';
-        profileBtn.style.borderColor = 'var(--border)';
-        profileBtn.innerText = '👤';
+    try {
+      const dbView = document.getElementById('dashboardView');
+      const mainView = document.getElementById('mainAppView');
+      const navBtn = document.getElementById('navDashBtn');
+      
+      if (dbView) dbView.style.display = 'block';
+      if (mainView) mainView.style.display = 'none';
+      if (navBtn) navBtn.style.display = 'none';
+      
+      // Sync the top circular profile button color if custom picker exists
+      const profileBtn = document.getElementById('circularProfileBtn');
+      if (profileBtn) {
+        if (currentUser && typeof currentUser === 'string' && currentUser !== 'Guest' && currentUser !== '') {
+          profileBtn.style.background = 'var(--primary)';
+          profileBtn.style.color = '#ffffff';
+          profileBtn.style.borderColor = 'var(--primary-hover)';
+          profileBtn.innerText = currentUser.charAt(0).toUpperCase();
+        } else {
+          profileBtn.style.background = 'var(--surface)';
+          profileBtn.style.color = 'var(--text)';
+          profileBtn.style.borderColor = 'var(--border)';
+          profileBtn.innerText = '👤';
+        }
       }
+      
+      const restrictedTabs = ['tabMyRooms', 'tabCreateRoom'];
+      restrictedTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (currentUser === 'Guest') ? 'none' : '';
+      });
+      if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none';
+      switchRoomTab('public');
+      handleUrlParams();
+    } catch (err) {
+      console.error("Error in finalizeDashboardLoad:", err);
     }
-    
-    const restrictedTabs = ['tabMyRooms', 'tabCreateRoom'];
-    restrictedTabs.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = (currentUser === 'Guest') ? 'none' : '';
-    });
-    if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none';
-    switchRoomTab('public');
-    handleUrlParams();
   }
 
   function openAuthModal() { document.getElementById('authErrorText').style.display = 'none'; if (currentUser !== 'Guest' && currentUser !== '') { document.getElementById('authForms').style.display = 'none'; document.getElementById('loggedInProfile').style.display = 'block'; document.getElementById('profileNameDisplay').innerText = currentUser === 'Admin' ? 'Master Admin' : currentUser; document.getElementById('manualSyncBtn').style.display = 'inline-block'; const closeBtn = document.getElementById('authCloseBtn'); if(closeBtn) closeBtn.style.display = 'block'; } else { document.getElementById('authForms').style.display = 'block'; document.getElementById('loggedInProfile').style.display = 'none'; document.getElementById('manualSyncBtn').style.display = 'none'; const closeBtn = document.getElementById('authCloseBtn'); if(currentUser === 'Guest') { if(closeBtn) closeBtn.style.display = 'block'; } else { if(closeBtn) closeBtn.style.display = 'none'; } } document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authModalOverlay').style.display = 'flex'; }
@@ -2382,53 +2426,129 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }
   }
 
-  function switchRoomTab(tab) { document.getElementById('tabPublicRooms').className = tab === 'public' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabMyRooms').className = tab === 'my' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabJoinedRooms').className = tab === 'joined' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabJoinRoom').className = tab === 'join' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabCreateRoom').className = tab === 'create' ? 'auth-tab active' : 'auth-tab'; if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').className = tab === 'admin' ? 'auth-tab active' : 'auth-tab'; const listArea = document.getElementById('roomListArea'); const joinArea = document.getElementById('roomJoinArea'); const createArea = document.getElementById('roomCreateArea'); const searchArea = document.getElementById('roomSearchArea'); const adminArea = document.getElementById('roomAdminArea'); listArea.style.display = 'none'; joinArea.style.display = 'none'; createArea.style.display = 'none'; searchArea.style.display = 'none'; if(adminArea) adminArea.style.display = 'none'; if (tab === 'create') { createArea.style.display = 'block'; } else if (tab === 'join') { joinArea.style.display = 'block'; } else if (tab === 'admin') { adminArea.style.display = 'block'; loadAdminData(); } else { listArea.style.display = 'grid'; if(tab === 'public' || tab === 'joined') searchArea.style.display = 'block'; renderRoomList(tab); } }
-  function renderRoomList(filter) {
-    const listArea = document.getElementById('roomListArea');
-    listArea.innerHTML = '';
-    const searchQ = document.getElementById('roomSearchInput').value.toLowerCase();
-    let found = false;
-    for (const [roomId, data] of Object.entries(allRooms)) {
-      const isPrivate = !data.isPublic;
-      if (filter === 'public') {
-        if (isPrivate && !isAdmin) continue;
-        if (searchQ && !data.name.toLowerCase().includes(searchQ) && !roomId.toLowerCase().includes(searchQ)) continue;
+  function switchRoomTab(tab) {
+    try {
+      const tabPublic = document.getElementById('tabPublicRooms');
+      const tabMy = document.getElementById('tabMyRooms');
+      const tabJoined = document.getElementById('tabJoinedRooms');
+      const tabJoin = document.getElementById('tabJoinRoom');
+      const tabCreate = document.getElementById('tabCreateRoom');
+      const tabAdmin = document.getElementById('tabAdminPanel');
+      
+      if (tabPublic) tabPublic.className = tab === 'public' ? 'auth-tab active' : 'auth-tab';
+      if (tabMy) tabMy.className = tab === 'my' ? 'auth-tab active' : 'auth-tab';
+      if (tabJoined) tabJoined.className = tab === 'joined' ? 'auth-tab active' : 'auth-tab';
+      if (tabJoin) tabJoin.className = tab === 'join' ? 'auth-tab active' : 'auth-tab';
+      if (tabCreate) tabCreate.className = tab === 'create' ? 'auth-tab active' : 'auth-tab';
+      if (tabAdmin) tabAdmin.className = tab === 'admin' ? 'auth-tab active' : 'auth-tab';
+      
+      const listArea = document.getElementById('roomListArea');
+      const joinArea = document.getElementById('roomJoinArea');
+      const createArea = document.getElementById('roomCreateArea');
+      const searchArea = document.getElementById('roomSearchArea');
+      const adminArea = document.getElementById('roomAdminArea');
+      
+      if (listArea) listArea.style.display = 'none';
+      if (joinArea) joinArea.style.display = 'none';
+      if (createArea) createArea.style.display = 'none';
+      if (searchArea) searchArea.style.display = 'none';
+      if (adminArea) adminArea.style.display = 'none';
+      
+      if (tab === 'create') {
+        if (createArea) createArea.style.display = 'block';
+      } else if (tab === 'join') {
+        if (joinArea) joinArea.style.display = 'block';
+      } else if (tab === 'admin') {
+        if (adminArea) adminArea.style.display = 'block';
+        loadAdminData();
+      } else {
+        if (listArea) listArea.style.display = 'grid';
+        if ((tab === 'public' || tab === 'joined') && searchArea) searchArea.style.display = 'block';
+        renderRoomList(tab);
       }
-      if (filter === 'my' && data.creator !== currentUser && !isAdmin) continue;
-      if (filter === 'joined') {
-        const isMember = currentUserJoinedRooms.includes(roomId) || (data.permissions && currentUser && data.permissions[currentUser.toLowerCase()]);
-        if (!isMember) continue;
-        if (searchQ && !data.name.toLowerCase().includes(searchQ) && !roomId.toLowerCase().includes(searchQ)) continue;
-      }
-      found = true;
-      const card = document.createElement('div');
-      card.style.background = 'var(--surface-alt)';
-      card.style.padding = '20px';
-      card.style.borderRadius = '12px';
-      card.style.border = '1px solid var(--border)';
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.justifyContent = 'space-between';
-      card.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
-      const isOwnerOrAdmin = (data.creator === currentUser || isAdmin);
-      const isProtectedRoom = (roomId === 'GLOBAL');
-      let deleteBtnHtml = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-danger btn-small" style="padding: 10px; width:100%;" onclick="deleteRoomAction('${roomId}')" title="Delete Room">🗑️ Delete</button>` : '';
-      let togglePrivacyBtn = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="toggleRoomPrivacy('${roomId}')" title="Toggle Public/Private">${isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>` : '';
-      let leaveBtnHtml = (filter === 'joined' && !isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="leaveJoinedRoomAction('${roomId}')" title="Leave Room">❌ Leave</button>` : '';
-      let editDashBtnHtml = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="openEditRoomModalFromDash('${roomId}')" title="Edit Room Details">✏️ Edit</button>` : '';
-      const displayDesc = data.description ? data.description : 'No description provided.';
-      const lockIcon = isPrivate ? '🔒 Private' : '🌐 Public';
-      let passwordHtml = '';
-      if (isPrivate && isOwnerOrAdmin && data.password !== undefined) {
-        passwordHtml = `<div style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display:flex; align-items:center; gap:6px;"><span>🔑</span><input type="password" id="pw_display_${roomId}" value="${data.password}" readonly style="background:transparent; border:none; width:65px; font-size:11px; font-weight:bold; color:var(--text); padding:0; outline:none; font-family:monospace;" onfocus="this.blur()"><span style="cursor:pointer; font-size:12px;" onclick="toggleRoomCardPassword('${roomId}')" id="pw_toggle_${roomId}">👁️</span></div>`;
-      }
-      const hasJoined = (currentUserJoinedRooms.includes(roomId) || data.creator === currentUser || isAdmin || (data.permissions && currentUser && data.permissions[currentUser.toLowerCase()]));
-      const joinBtnText = hasJoined ? "🚪 Enter Room" : "🚪 Join";
-      card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name || roomId}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${data.creator}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button class="btn-success" style="padding: 10px; font-size: 14px; width:100%;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
-      listArea.appendChild(card);
+    } catch (err) {
+      console.error("Error in switchRoomTab:", err);
     }
-    if (!found) {
-      listArea.innerHTML = `<p style="text-align:center; color:var(--text-light); font-size:15px; grid-column: 1 / -1;">No rooms found.</p>`;
+  }
+
+  function renderRoomList(filter) {
+    try {
+      const listArea = document.getElementById('roomListArea');
+      if (!listArea) return;
+      listArea.innerHTML = '';
+      
+      let searchQ = '';
+      const searchInput = document.getElementById('roomSearchInput');
+      if (searchInput) searchQ = searchInput.value.toLowerCase();
+      
+      let found = false;
+      const roomsEntries = allRooms ? Object.entries(allRooms) : [];
+      
+      for (const [roomId, rawData] of roomsEntries) {
+        if (!rawData) continue;
+        
+        const data = {
+          name: rawData.name || roomId || 'Unnamed Room',
+          creator: rawData.creator || 'Unknown',
+          description: rawData.description || 'No description provided.',
+          isPublic: rawData.isPublic !== undefined ? rawData.isPublic : true,
+          password: rawData.password || '',
+          permissions: rawData.permissions || {}
+        };
+        
+        const isPrivate = !data.isPublic;
+        const safeUser = (currentUser && typeof currentUser === 'string') ? currentUser : '';
+        const safeUserLower = safeUser.toLowerCase();
+        const safeJoinedRooms = Array.isArray(currentUserJoinedRooms) ? currentUserJoinedRooms : [];
+        
+        if (filter === 'public') {
+          if (isPrivate && !isAdmin) continue;
+          if (searchQ && !data.name.toLowerCase().includes(searchQ) && !roomId.toLowerCase().includes(searchQ)) continue;
+        }
+        if (filter === 'my' && data.creator !== safeUser && !isAdmin) continue;
+        if (filter === 'joined') {
+          const isMember = safeJoinedRooms.includes(roomId) || (data.permissions && safeUserLower && data.permissions[safeUserLower]);
+          if (!isMember) continue;
+          if (searchQ && !data.name.toLowerCase().includes(searchQ) && !roomId.toLowerCase().includes(searchQ)) continue;
+        }
+        
+        found = true;
+        const card = document.createElement('div');
+        card.style.background = 'var(--surface-alt)';
+        card.style.padding = '20px';
+        card.style.borderRadius = '12px';
+        card.style.border = '1px solid var(--border)';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.justifyContent = 'space-between';
+        card.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
+        
+        const isOwnerOrAdmin = (data.creator === safeUser || isAdmin);
+        const isProtectedRoom = (roomId === 'GLOBAL');
+        
+        let deleteBtnHtml = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-danger btn-small" style="padding: 10px; width:100%;" onclick="deleteRoomAction('${roomId}')" title="Delete Room">🗑️ Delete</button>` : '';
+        let togglePrivacyBtn = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="toggleRoomPrivacy('${roomId}')" title="Toggle Public/Private">${isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>` : '';
+        let leaveBtnHtml = (filter === 'joined' && !isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="leaveJoinedRoomAction('${roomId}')" title="Leave Room">❌ Leave</button>` : '';
+        let editDashBtnHtml = (isOwnerOrAdmin) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%;" onclick="openEditRoomModalFromDash('${roomId}')" title="Edit Room Details">✏️ Edit</button>` : '';
+        
+        const displayDesc = data.description;
+        const lockIcon = isPrivate ? '🔒 Private' : '🌐 Public';
+        let passwordHtml = '';
+        if (isPrivate && isOwnerOrAdmin && data.password !== undefined && data.password !== '') {
+          passwordHtml = `<div style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display:flex; align-items:center; gap:6px;"><span>🔑</span><input type="password" id="pw_display_${roomId}" value="${data.password}" readonly style="background:transparent; border:none; width:65px; font-size:11px; font-weight:bold; color:var(--text); padding:0; outline:none; font-family:monospace;" onfocus="this.blur()"><span style="cursor:pointer; font-size:12px;" onclick="toggleRoomCardPassword('${roomId}')" id="pw_toggle_${roomId}">👁️</span></div>`;
+        }
+        
+        const hasJoined = (safeJoinedRooms.includes(roomId) || data.creator === safeUser || isAdmin || (data.permissions && safeUserLower && data.permissions[safeUserLower]));
+        const joinBtnText = hasJoined ? "🚪 Enter Room" : "🚪 Join";
+        
+        card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${data.creator}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button class="btn-success" style="padding: 10px; font-size: 14px; width:100%;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
+        listArea.appendChild(card);
+      }
+      if (!found) {
+        listArea.innerHTML = `<p style="text-align:center; color:var(--text-light); font-size:15px; grid-column: 1 / -1;">No rooms found.</p>`;
+      }
+    } catch (err) {
+      console.error("Error in renderRoomList:", err);
     }
   }
   function toggleRoomCardPassword(roomId) { const pwInput = document.getElementById(`pw_display_${roomId}`); const toggleIcon = document.getElementById(`pw_toggle_${roomId}`); if(pwInput.type === 'password') { pwInput.type = 'text'; toggleIcon.innerText = '🙈'; } else { pwInput.type = 'password'; toggleIcon.innerText = '👁️'; } }
