@@ -188,8 +188,10 @@
         width: 18px !important;
         height: 18px !important;
       }
-      .bookmark-btn:hover {
-        transform: scale(1.1) rotate(15deg) !important;
+      @media (hover: hover) {
+        .bookmark-btn:hover {
+          transform: scale(1.1) rotate(15deg) !important;
+        }
       }
 
       /* Mobile Stats Bar Wrap Prevention */
@@ -250,7 +252,7 @@
     body.immersive-mode #globalHeaderBar, body.immersive-mode .global-header, body.immersive-mode .tabs, body.immersive-mode .quiz-controls { display: none !important; } #exitImmersiveBtn { display: none; margin-bottom: 20px; background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); } #exitImmersiveBtn:hover { background: var(--danger); color: white; border-color: var(--danger); }
     .bank-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px; transition: 0.3s; position: relative;} .bank-card.bulk-selected { border-color: var(--danger); background: rgba(225, 29, 72, 0.05); } .bank-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;} .bank-ans-box { background: var(--surface-alt); padding: 14px 18px; border-radius: 8px; margin-top: 15px; font-size: 14px; color: var(--text); border: 1px solid var(--border);} .bank-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; } .bank-actions input { text-align: center; padding: 6px; font-weight: bold; width: auto; }
     .bulk-checkbox { display: none; position: absolute; top: 20px; right: 20px; transform: scale(1.5); accent-color: var(--danger); cursor: pointer; z-index: 10;} #bulkActionBar { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--danger); z-index: 3000; align-items: center; gap: 20px;}
-    .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 6000; font-weight: 800; font-size: 20px; color: white; backdrop-filter: blur(2px);} .custom-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 5000; backdrop-filter: blur(3px);} #authModalOverlay { z-index: 4000; background: var(--bg); align-items: center; } .custom-modal { background: var(--surface); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; max-height: 90vh; overflow-y: auto;}
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 6000; font-weight: 800; font-size: 20px; color: white; backdrop-filter: blur(2px);} .custom-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 5000; backdrop-filter: blur(3px); overflow-y: auto !important; -webkit-overflow-scrolling: touch !important;} #authModalOverlay { z-index: 4000; background: var(--bg); align-items: center; } .custom-modal { background: var(--surface); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; max-height: 90vh; overflow-y: auto;}
     .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 10px; max-height: 350px; overflow-y: auto; margin-top: 15px; justify-content: center;} .nav-btn { width: 42px; height: 42px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; padding: 0; font-size: 14px; flex-shrink: 0;} .nav-btn:hover { filter: brightness(0.9); transform: scale(1.05); }
     .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding-bottom: 5px; } .auth-tab { flex: 0 0 auto; padding: 10px 15px; font-weight: 600; color: var(--text-light); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; text-align: center; } .auth-tab.active { color: var(--primary); border-color: var(--primary); } .tutorial-list { text-align: left; margin-bottom: 20px; padding-left: 20px; color: var(--text-light); font-size: 14px; line-height: 1.6;} .tutorial-list li { margin-bottom: 8px; }
     .room-card { background: var(--surface-alt); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; } .room-card:hover { border-color: var(--primary); } 
@@ -361,21 +363,29 @@
     .people-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 0;
       margin-top: 15px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
     }
     .people-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 18px;
-      transition: border-color 0.2s, background-color 0.2s;
+      background: transparent !important;
+      border: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      border-radius: 0 !important;
+      padding: 14px 18px !important;
+      transition: background-color 0.2s;
+    }
+    .people-card:last-child {
+      border-bottom: none !important;
     }
     .people-card:hover {
-      border-color: var(--primary);
+      background-color: var(--surface-alt) !important;
     }
     .people-info {
       display: flex;
@@ -508,12 +518,14 @@
       background: rgba(30, 41, 59, 0.4);
       border-color: rgba(255, 255, 255, 0.1);
     }
-    .bookmark-btn:hover {
-      transform: scale(1.15) rotate(15deg) !important;
-      border-color: #F59E0B !important;
-      color: #F59E0B !important;
-      background: rgba(245, 158, 11, 0.15) !important;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.3) !important;
+    @media (hover: hover) {
+      .bookmark-btn:hover {
+        transform: scale(1.15) rotate(15deg) !important;
+        border-color: #F59E0B !important;
+        color: #F59E0B !important;
+        background: rgba(245, 158, 11, 0.15) !important;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.3) !important;
+      }
     }
     .bookmark-btn svg {
       width: 20px;
@@ -615,6 +627,9 @@
       border-bottom: 2px solid var(--border) !important;
       padding-bottom: 5px !important;
       -webkit-overflow-scrolling: touch !important;
+      padding-left: 36px !important;
+      padding-right: 36px !important;
+      box-sizing: border-box !important;
     }
     .tabs-scroll-container::-webkit-scrollbar {
       display: none !important; /* Safari and Chrome */
@@ -698,6 +713,7 @@
       color: var(--text-light) !important;
       padding: 0 !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+      margin-right: 8px !important;
     }
     .bookmark-btn svg {
       width: 20px !important;
@@ -707,15 +723,17 @@
       stroke-width: 2 !important;
       transition: fill 0.2s, stroke 0.2s, transform 0.2s !important;
     }
-    .bookmark-btn:hover {
-      transform: scale(1.1) rotate(15deg) !important;
-      border-color: var(--primary) !important;
-      color: var(--primary) !important;
-      background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
-      box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 20%, transparent) !important;
-    }
-    .bookmark-btn:hover svg {
-      stroke: var(--primary) !important;
+    @media (hover: hover) {
+      .bookmark-btn:hover {
+        transform: scale(1.1) rotate(15deg) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+      }
+      .bookmark-btn:hover svg {
+        stroke: var(--primary) !important;
+      }
     }
     .bookmark-btn.pinned {
       background: rgba(245, 158, 11, 0.1) !important;
@@ -727,13 +745,26 @@
       fill: #F59E0B !important;
       stroke: #F59E0B !important;
     }
-    .bookmark-btn.pinned:hover {
-      background: rgba(245, 158, 11, 0.2) !important;
-      box-shadow: 0 0 18px rgba(245, 158, 11, 0.5) !important;
+    @media (hover: hover) {
+      .bookmark-btn.pinned:hover {
+        background: rgba(245, 158, 11, 0.2) !important;
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.5) !important;
+      }
     }
 
     /* Mobile View Gutter and Padding Improvements */
     @media (max-width: 600px) {
+      /* Mobile Modal Adjustments for Scrolling */
+      .custom-modal-overlay {
+        align-items: flex-start !important;
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+      }
+      .custom-modal {
+        max-height: calc(100vh - 40px) !important;
+        margin: auto !important;
+      }
+
       body {
         padding: 16px 12px !important;
       }
@@ -1278,9 +1309,12 @@ Here are my questions to format:
       </div>
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <button id="roomShareBtn" class="btn-success btn-small" style="font-weight:bold; display: none; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; width:auto; height:auto;" onclick="openShareModal()">🔗 Share Room</button>
-        <div style="display: flex; align-items: center; gap: 6px; background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-          <input type="checkbox" id="userPrivacyToggle" onchange="handlePrivacyToggle(this.checked)" style="width:16px; height:16px; margin:0; cursor:pointer; accent-color: var(--primary);">
-          <label for="userPrivacyToggle" style="margin:0; font-weight:600; cursor:pointer; font-size:12px; color:var(--text);" title="Hides your username from other members. Creator will still see your name in Permissions.">Hide Username</label>
+        <div style="display: flex; align-items: center; gap: 8px; background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);" title="Hides your username from other members. Creator will still see your name in Permissions.">
+          <span style="font-weight:600; font-size:12px; color:var(--text); cursor:pointer;" onclick="document.getElementById('userPrivacyToggle').click()">Hide Username</span>
+          <label class="switch">
+            <input type="checkbox" id="userPrivacyToggle" onchange="handlePrivacyToggle(this.checked)">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
     </div>
@@ -2502,6 +2536,13 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     container.addEventListener('scroll', updateArrows);
     window.addEventListener('resize', updateArrows);
     
+    container.addEventListener('wheel', (e) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+    
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => updateArrows());
       ro.observe(container);
@@ -3216,6 +3257,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('mainAppView').style.display = 'block'; 
     document.getElementById('navDashBtn').style.display = 'inline-block'; 
     switchTab('quizTab'); 
+    
+    if (updateQuizTabsScroller) {
+      setTimeout(updateQuizTabsScroller, 150);
+    } 
     
     // Clean up any existing snapshot listeners and heartbeats
     if (currentRoomListenerUnsubscribe) {
@@ -5274,10 +5319,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         <div class="people-info">
           <div class="people-avatar" style="${m.isPrivate && !isSelf && !isSystemAdmin ? 'background: var(--text-light);' : ''}">${avatarChar}</div>
           <div class="people-details">
-            <div class="people-name">
-              <span>${displayName}</span>
-              <span class="people-role-badge ${m.role}">${m.role === 'creator' ? 'Host' : m.role}</span>
+            <div class="people-name" style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-weight: 700; color: var(--text);">${displayName}</span>
               ${m.isPrivate && (isOwner || isSelf) ? '<span style="font-size: 11px; opacity: 0.6;" title="Private to other members">🔒 Private</span>' : ''}
+            </div>
+            <div class="people-role" style="font-size: 12px; color: var(--text-light); margin-top: 2px; font-weight: 500;">
+              ${m.role === 'creator' ? 'Admin' : (m.role.charAt(0).toUpperCase() + m.role.slice(1))}
             </div>
           </div>
         </div>
