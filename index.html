@@ -8,6 +8,27 @@
   <style>
     :root { --primary: #6366F1; --primary-hover: #4F46E5; --bg: #F9FAFB; --surface: #FFFFFF; --text: #1F2937; --text-light: #6B7280; --danger: #E11D48; --danger-hover: #BE123C; --success: #10B981; --border: #E5E7EB; --surface-alt: #F3F4F6; --input-bg: #FFFFFF; }
     body.dark-mode { --bg: #0F172A; --surface: #1E293B; --text: #F8FAFC; --text-light: #94A3B8; --border: #334155; --surface-alt: #0F172A; --input-bg: #0F172A; }
+    /* Premium Thin Rounded Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* Declarative Body Scroll Lock when modals are open */
+    body:has(.custom-modal-overlay:not([style*="display: none"]):not([style="display: none"])) {
+      overflow: hidden !important;
+    }
+
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.5; transition: background 0.3s, color 0.3s; }
     .container { max-width: 900px; margin: auto; background: var(--surface); padding: 25px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: 0.3s; }
     .container.mobile-view { max-width: 480px; padding: 20px 15px; } .container.mobile-view h1 { font-size: 22px; } .container.mobile-view .stats-bar { flex-direction: column; align-items: center; gap: 5px; text-align: center; } .container.mobile-view .tabs { gap: 10px; } .container.mobile-view .tab { padding: 8px 5px; font-size: 14px; }
@@ -232,11 +253,7 @@
     .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 10px; max-height: 350px; overflow-y: auto; margin-top: 15px; justify-content: center;} .nav-btn { width: 42px; height: 42px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; padding: 0; font-size: 14px; flex-shrink: 0;} .nav-btn:hover { filter: brightness(0.9); transform: scale(1.05); }
     .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding-bottom: 5px; } .auth-tab { flex: 0 0 auto; padding: 10px 15px; font-weight: 600; color: var(--text-light); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; text-align: center; } .auth-tab.active { color: var(--primary); border-color: var(--primary); } .tutorial-list { text-align: left; margin-bottom: 20px; padding-left: 20px; color: var(--text-light); font-size: 14px; line-height: 1.6;} .tutorial-list li { margin-bottom: 8px; }
     .room-card { background: var(--surface-alt); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; } .room-card:hover { border-color: var(--primary); } 
-    .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; font-size: 14px; font-weight: 500; cursor: grab; user-select: none; transition: background 0.2s, border-color 0.2s; } 
-    .cat-item:active { cursor: grabbing; }
-    .cat-item.dragging { opacity: 0.5; background: var(--surface-alt); border-style: dashed; border-color: var(--primary); }
-    .cat-item.drag-over { border: 2px dashed var(--primary); background: color-mix(in srgb, var(--primary) 5%, transparent); }
-    .drag-handle { font-size: 16px; color: var(--text-light); cursor: grab; margin-right: 10px; user-select: none; }
+    .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; font-size: 14px; font-weight: 500; transition: background 0.2s, border-color 0.2s; }
     .add-q-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; } .add-q-row span.opt-letter-label { font-weight: bold; width: 25px; text-align: right;}
     .print-tag-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; cursor: grab; user-select: none; transition: background 0.2s, border-color 0.2s; }
     .print-tag-row:active { cursor: grabbing; }
@@ -612,14 +629,14 @@
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
       <div>
         <label style="display:block; margin-bottom: 4px; font-weight: 600; font-size: 13px;">Layout Columns</label>
-        <select id="printColumnsSelect" style="width: 100%; margin-bottom: 0; height: 38px;">
+        <select id="printColumnsSelect" style="width: 100%; margin-bottom: 0; height: 38px !important; padding: 6px 12px !important;">
           <option value="1">1 Column</option>
           <option value="2" selected>2 Columns</option>
         </select>
       </div>
       <div>
         <label style="display:block; margin-bottom: 4px; font-weight: 600; font-size: 13px;">Font Size</label>
-        <select id="printFontSizeSelect" style="width: 100%; margin-bottom: 0; height: 38px;">
+        <select id="printFontSizeSelect" style="width: 100%; margin-bottom: 0; height: 38px !important; padding: 6px 12px !important;">
           <option value="12px">12px</option>
           <option value="14px" selected>14px</option>
           <option value="16px">16px</option>
@@ -630,7 +647,7 @@
     
     <div style="display:flex; gap:10px; border-top: 1px solid var(--border); padding-top: 15px; justify-content: flex-end;">
       <button class="btn-outline" style="width: auto; padding: 10px 20px;" onclick="document.getElementById('printModalOverlay').style.display='none'">Cancel</button>
-      <button class="btn-outline" style="width: auto; padding: 10px 20px; border-color: var(--primary); color: var(--primary);" id="exportGoogleDocBtn" onclick="executeGoogleDocExport()">Export to Google Doc</button>
+      <button class="btn-outline" style="width: auto; padding: 10px 20px; border-color: var(--primary); color: var(--primary);" id="exportGoogleDocBtn" onclick="executeGoogleDocExport()">Download Formatted Doc</button>
       <button class="btn-success" style="width: auto; padding: 10px 20px;" onclick="executePrint()">Generate PDF</button>
     </div>
   </div>
@@ -692,14 +709,14 @@
     <h2 style="text-align:center; color:var(--primary); margin-top:0;">Boards Reviewer</h2><p style="text-align:center; color:var(--text-light); font-size:14px; margin-top:-10px; margin-bottom:20px;">Master your concepts anywhere.</p>
     <div id="authForms">
         <div class="auth-tabs"><div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</div><div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</div></div>
-        <div class="input-wrapper"><label>Username</label><input type="text" id="authUsername" placeholder="Enter username..."></div><div class="input-wrapper" id="emailWrapper" style="display:none;"><label>Email (For Recovery)</label><input type="email" id="authEmail" placeholder="you@email.com"></div><div class="input-wrapper"><label>Password</label><input type="password" id="authPassword" placeholder="Enter password..."></div><div class="input-wrapper" id="confirmPassWrapper" style="display:none;"><label>Confirm Password</label><input type="password" id="authConfirmPassword" placeholder="Repeat password..."></div>
+        <div class="input-wrapper"><label>Username</label><input type="text" id="authUsername" placeholder="Enter username..." onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper" id="emailWrapper" style="display:none;"><label>Email (For Recovery)</label><input type="email" id="authEmail" placeholder="you@email.com" onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper"><label>Password</label><input type="password" id="authPassword" placeholder="Enter password..." onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper" id="confirmPassWrapper" style="display:none;"><label>Confirm Password</label><input type="password" id="authConfirmPassword" placeholder="Repeat password..." onkeydown="if(event.key === 'Enter') submitAuth()"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-5px; margin-bottom:20px; flex-wrap: wrap; gap: 10px;"><div style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="rememberMeChk" checked style="width:auto; margin:0; transform: scale(1.2); cursor:pointer;"><label for="rememberMeChk" style="margin:0; font-size:13px; font-weight:500; color:var(--text); cursor:pointer;">Remember Me</label></div><span id="forgotPassText" style="font-size: 13px; color: var(--primary); cursor: pointer; font-weight: 600;" onclick="showForgotPasswordUI()">Forgot Password?</span></div>
         <div style="display:flex; align-items:center; gap:8px; margin-top:-10px; margin-bottom:20px;"><input type="checkbox" id="showPassChk" onchange="togglePasswords(this.checked)" style="width:auto; margin:0; transform: scale(1.2); cursor:pointer;"><label for="showPassChk" style="margin:0; font-size:13px; font-weight:500; color:var(--text-light); cursor:pointer;">Show Password</label></div><p id="authErrorText" style="color: var(--danger); font-size: 13px; text-align: center; margin-top: -10px; margin-bottom: 10px; font-weight: bold; display: none;"></p><button id="authActionBtn" onclick="submitAuth()" style="margin-bottom: 15px;">Log In</button>
         <div style="text-align: center; border-top: 1px solid var(--border); padding-top: 15px;"><p style="font-size: 13px; color: var(--text-light); margin-top: 0;">Don't want to save your progress online?</p><button class="btn-outline" onclick="playAsGuest()">Play as Guest</button></div>
     </div>
     <div id="forgotPasswordForms" style="display: none;">
-        <h3 style="margin-top:0;">Reset Password</h3><div id="pinRequestSection"><p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you a 6-digit PIN.</p><div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username"></div><div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com"></div><button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Recovery PIN</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
-        <div id="pinSubmitSection" style="display: none;"><p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 15px;">PIN sent! Check your email.</p><div class="input-wrapper"><label>6-Digit PIN</label><input type="number" id="resetPinInput" placeholder="123456" style="letter-spacing: 2px; font-size: 18px; text-align: center;"></div><div class="input-wrapper"><label>New Password</label><input type="password" id="resetNewPass" placeholder="Enter new password"></div><button onclick="submitNewPassword()" style="margin-bottom: 10px;">Change Password & Login</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
+        <h3 style="margin-top:0;">Reset Password</h3><div id="pinRequestSection"><p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you a 6-digit PIN.</p><div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username" onkeydown="if(event.key === 'Enter') requestResetPin()"></div><div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com" onkeydown="if(event.key === 'Enter') requestResetPin()"></div><button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Recovery PIN</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
+        <div id="pinSubmitSection" style="display: none;"><p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 15px;">PIN sent! Check your email.</p><div class="input-wrapper"><label>6-Digit PIN</label><input type="number" id="resetPinInput" placeholder="123456" style="letter-spacing: 2px; font-size: 18px; text-align: center;" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><div class="input-wrapper"><label>New Password</label><input type="password" id="resetNewPass" placeholder="Enter new password" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><button onclick="submitNewPassword()" style="margin-bottom: 10px;">Change Password & Login</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
     </div>
     <div id="loggedInProfile" style="display: none; text-align: center;">
         <p style="font-size: 16px; font-weight: 600; color: var(--text);">You are logged in as <span id="profileNameDisplay" style="color: var(--primary);"></span>.</p><p style="font-size: 14px; color: var(--text-light);">Your progress is safely auto-syncing to the cloud!</p><button class="btn-outline" id="manualSyncBtn" style="margin-top: 15px; border-color: var(--primary); color: var(--primary);" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore Progress)</button><button class="btn-danger" style="margin-top: 15px;" onclick="logoutUser()">Log Out</button>
@@ -747,7 +764,7 @@
         <div style="display:flex; flex-direction:column; gap:15px; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 4px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
-              <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;">🔒 Private Mode</span>
+              <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;">🔒 Hide Username</span>
               <span style="font-size:11px; color:var(--text-light);">Hide your name in all room member lists</span>
             </div>
             <label class="switch"><input type="checkbox" id="settingsGlobalPrivacyToggle" onchange="toggleGlobalPrivacyPreference()"><span class="slider"></span></label>
@@ -848,7 +865,7 @@
 
 <div class="container" id="mainAppView" style="display:none;">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;"><h1 id="mainQuizTitle" style="margin:0;">Boards Reviewer</h1><button id="editRoomInfoBtn" class="btn-outline btn-small" style="display:none; padding: 4px 8px; border:none;" onclick="openEditRoomModal()" title="Edit Room Title & Details">✏️</button></div>
-  <div class="global-header"><div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 450px;"><select id="subjectSelect" onchange="loadSubjectData()" style="flex: 1;"></select><button id="pinDefaultCategoryBtn" class="btn-outline btn-small" onclick="pinCurrentCategoryDefault()" title="Pin as Default Category" style="padding:10px 15px; border:1px solid var(--border); font-size:16px; transition: all 0.2s;">📌</button><button class="btn-outline btn-small" onclick="openCategoryModal()" title="Manage Categories" style="padding: 10px 15px; border: 1px solid var(--border);" id="editCategoriesBtn">⚙️</button></div><div id="statusBadge" class="status-badge">0 Questions in Bank</div></div>
+  <div class="global-header"><div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 450px;"><select id="subjectSelect" onchange="loadSubjectData()" style="flex: 1;"></select><button class="btn-outline btn-small" onclick="openCategoryModal()" title="Manage Categories" style="padding: 10px 15px; border: 1px solid var(--border);" id="editCategoriesBtn">⚙️</button></div><div id="statusBadge" class="status-badge">0 Questions in Bank</div></div>
   <div class="tabs"><div class="tab active" onclick="switchTab('quizTab', this)">Take Quiz</div><div class="tab" onclick="switchTab('pinnedTab', this)" id="tabPinned">⭐ Pinned</div><div class="tab" onclick="switchTab('peopleTab', this)" id="tabPeople">👥 People</div><div class="tab" onclick="switchTab('databaseTab', this)" id="tabAddQuestions">Add Questions</div><div class="tab" onclick="switchTab('bankTab', this)" id="tabManageBank">Manage Bank</div><div class="tab" onclick="switchTab('permissionsTab', this)" id="tabManagePermissions" style="display:none;">👥 Permissions</div></div>
 
   <div id="quizTab" class="panel active">
@@ -872,7 +889,13 @@
               <label style="font-weight: 500; font-size: 13px; color: var(--text-light); cursor: pointer; margin: 0; display: flex; align-items: center; gap: 6px;"><input type="radio" name="studyOrder" value="sequential" onchange="handleTagSwitch()"> Exam Order</label>
             </div>
             <label style="font-weight: 600; cursor: pointer; margin: 0; margin-top: 8px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px;"><input type="radio" name="mode" value="mistakes" onchange="toggleModeSettings()" style="transform: scale(1.1);"> 🎯 Review Mistakes <span style="font-weight: normal; color: var(--text-light);">(Questions you got wrong)</span></label>
-            <label style="font-weight: 600; cursor: pointer; margin: 0; margin-top: 8px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px;"><input type="checkbox" id="shuffleOptionsToggle" style="accent-color: var(--primary); transform: scale(1.1);"> Randomize Options <span style="font-weight: normal; color: var(--text-light);">(Shuffle A, B, C, D)</span></label>
+            <div class="switch-container" style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px; display: flex; align-items: center; gap: 10px; justify-content: flex-start;">
+              <label class="switch">
+                <input type="checkbox" id="shuffleOptionsToggle">
+                <span class="slider"></span>
+              </label>
+              <span style="font-size: 14px; font-weight: 600; color: var(--text);">Randomize Options <span style="font-weight: normal; color: var(--text-light);">(Shuffle A, B, C, D)</span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -1022,7 +1045,7 @@ Here are my questions to format:
       <h3 style="margin: 0; font-size: 20px;">Question Bank</h3>
       <div class="bank-controls">
           <input type="text" id="bankSearchInput" placeholder="🔍 Search bank..." style="width:160px; padding: 8px 12px; margin:0;" onkeyup="renderBank()">
-          <button id="renameTagBtn" class="btn-outline btn-small" style="display:none;" onclick="triggerRenameTag()">✏️ Rename tag</button>
+          <button id="manageTagsBtn" class="btn-outline btn-small" style="display:none;" onclick="openManageTagsModal()">🏷️ Manage Groups</button>
           <select id="bankTagFilter" style="width: auto; padding: 8px 12px;" onchange="renderBank()"><option value="ALL">Filter: All Groups</option></select>
           <button id="printExamBtn" class="btn-outline btn-small" style="display:none;" onclick="openPrintModal()">🖨️ Print Generator</button>
           <button id="toggleBulkManageBtn" class="btn-outline btn-small" style="display:none;" onclick="toggleBulkDelete()">Bulk Manage</button>
@@ -1042,7 +1065,7 @@ Here are my questions to format:
         <button id="roomShareBtn" class="btn-success btn-small" style="font-weight:bold; display: none; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; width:auto; height:auto;" onclick="openShareModal()">🔗 Share Room</button>
         <div style="display: flex; align-items: center; gap: 6px; background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
           <input type="checkbox" id="userPrivacyToggle" onchange="handlePrivacyToggle(this.checked)" style="width:16px; height:16px; margin:0; cursor:pointer; accent-color: var(--primary);">
-          <label for="userPrivacyToggle" style="margin:0; font-weight:600; cursor:pointer; font-size:12px; color:var(--text);" title="Hides your username from other members. Creator will still see your name in Permissions.">Private Mode</label>
+          <label for="userPrivacyToggle" style="margin:0; font-weight:600; cursor:pointer; font-size:12px; color:var(--text);" title="Hides your username from other members. Creator will still see your name in Permissions.">Hide Username</label>
         </div>
       </div>
     </div>
@@ -1078,8 +1101,20 @@ Here are my questions to format:
   <div class="custom-modal" style="max-width: 400px; text-align: left;">
     <h3 style="margin-top:0; color:var(--text); font-size:20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Manage Categories</h3>
     <div id="categoryListArea" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; margin-top: 15px;"></div>
-    <div style="display:flex; gap:10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;"><input type="text" id="newCategoryInput" placeholder="New category name..." style="flex:1; margin:0;"><button class="btn-success" style="width: auto; background: var(--success);" onclick="addNewCategory()">Add</button></div>
+    <div id="categoryAddContainer" style="display:flex; gap:10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;"><input type="text" id="newCategoryInput" placeholder="New category name..." style="flex:1; margin:0;"><button class="btn-success" style="width: auto; background: var(--success);" onclick="addNewCategory()">Add</button></div>
     <button class="btn-outline" style="margin-top: 15px; width: 100%;" onclick="closeCategoryModal()">Done</button>
+  </div>
+</div>
+
+<div id="manageTagsModalOverlay" class="custom-modal-overlay" style="z-index: 5500; display: none;">
+  <div class="custom-modal" style="max-width: 450px; text-align: left;">
+    <h3 style="margin-top:0; color:var(--text); font-size:20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; display:flex; align-items:center; gap:8px;">🏷️ Manage Groups & Tags</h3>
+    <p style="font-size:12px; color:var(--text-light); margin-top:0;">Drag to reorder groups. This determines their display sequence in the bank and printouts.</p>
+    <div id="manageTagsListArea" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; margin-top: 15px;"></div>
+    <div style="display:flex; gap:10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; justify-content: flex-end;">
+      <button class="btn-outline" style="width: auto; padding: 8px 16px;" onclick="closeManageTagsModal()">Cancel</button>
+      <button class="btn-success" style="width: auto; padding: 8px 16px;" onclick="saveTagsOrderAction()">Save Sequence</button>
+    </div>
   </div>
 </div>
 
@@ -1300,10 +1335,6 @@ async function exportRoomToGoogleDoc(roomId, subject, selectedPrintTags, usernam
       </style>
     </head>
     <body>
-      <div style="text-align:center; margin-bottom:30px; border-bottom:2px solid #000; padding-bottom:10px; color:#000;">
-        <h1 style="font-size:24px; margin:0 0 5px 0;">${docTitle}</h1>
-        <p style="font-size:12px; margin:0; font-style:italic;">Generated on ${new Date().toLocaleDateString()} • Powered by Boards Reviewer</p>
-      </div>
       <div>
         ${qHtml}
       </div>
@@ -1697,6 +1728,18 @@ const backend = {
     return { success: true, rooms: roomsData };
   },
 
+  async updateRoomTagsOrder(roomId, subject, tagsOrder, username, sessionToken) {
+    const docRef = db.collection('rooms').doc(roomId.toUpperCase());
+    const snap = await docRef.get();
+    if (!snap.exists) return { success: false, msg: "Room not found." };
+    const room = snap.data();
+    let currentTagsOrder = room.tagsOrder || {};
+    currentTagsOrder[subject] = tagsOrder;
+    await docRef.update({ tagsOrder: currentTagsOrder });
+    const roomsData = await this.getRoomsData(username, sessionToken);
+    return { success: true, rooms: roomsData };
+  },
+
   async renameCategoryDB(roomId, oldName, newName, username, sessionToken) {
     const docRef = db.collection('rooms').doc(roomId.toUpperCase());
     const snap = await docRef.get();
@@ -1791,11 +1834,33 @@ const backend = {
   },
 
   async loadQuestionsJSON(bankId, subject, username, sessionToken, roomPassword) {
+    const docRef = db.collection('rooms').doc(bankId.toUpperCase());
+    const roomSnap = await docRef.get();
+    let tagsOrder = [];
+    if (roomSnap.exists) {
+      const room = roomSnap.data();
+      if (room.tagsOrder && room.tagsOrder[subject]) {
+        tagsOrder = room.tagsOrder[subject];
+      }
+    }
+
     const qRef = db.collection('rooms').doc(bankId.toUpperCase()).collection('questions');
     const qSnap = await qRef.where('subject', '==', subject).get();
     let questions = [];
     qSnap.forEach(qDoc => questions.push(qDoc.data()));
-    questions.sort((a, b) => (a.displayItemNumber || 0) - (b.displayItemNumber || 0));
+    
+    questions.sort((a, b) => {
+      const tagA = a.tag || "Untagged";
+      const tagB = b.tag || "Untagged";
+      let idxA = tagsOrder.indexOf(tagA);
+      let idxB = tagsOrder.indexOf(tagB);
+      if (idxA === -1) idxA = 999999;
+      if (idxB === -1) idxB = 999999;
+      if (idxA !== idxB) {
+        return idxA - idxB;
+      }
+      return (a.displayItemNumber || 0) - (b.displayItemNumber || 0);
+    });
     return questions;
   },
 
@@ -2825,14 +2890,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     if (hasRoomEditAccess) {
       document.getElementById('adminLockAdd').style.display = 'none';
       document.getElementById('addTools').style.display = 'block';
-      document.getElementById('editCategoriesBtn').style.display = 'inline-block';
       document.getElementById('toggleBulkManageBtn').style.display = 'inline-block';
+      document.getElementById('manageTagsBtn').style.display = 'inline-block';
     } else {
       document.getElementById('addTools').style.display = 'none';
       document.getElementById('adminLockAdd').style.display = 'block';
-      document.getElementById('editCategoriesBtn').style.display = 'none';
       document.getElementById('toggleBulkManageBtn').style.display = 'none';
+      document.getElementById('manageTagsBtn').style.display = 'none';
     }
+    document.getElementById('editCategoriesBtn').style.display = 'inline-block';
     
     const activeTabPanel = document.querySelector('.panel.active');
     if (activeTabPanel) {
@@ -2852,37 +2918,128 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   
   function openCategoryModal() {
-    if(!hasRoomEditAccess) return;
     const listArea = document.getElementById('categoryListArea');
     listArea.innerHTML = '';
-    let catDragSrcIndex = null;
+    
+    const addContainer = document.getElementById('categoryAddContainer');
+    if (addContainer) {
+      addContainer.style.display = hasRoomEditAccess ? 'flex' : 'none';
+    }
     
     const cats = allRooms[currentRoomId].categories || [];
+    const key = 'psych_pinned_default_' + currentRoomId;
+    const currentDefault = localStorage.getItem(key);
+    
     cats.forEach((cat, idx) => {
       const div = document.createElement('div');
       div.className = 'cat-item';
-      div.setAttribute('draggable', 'true');
       div.setAttribute('data-index', idx);
       
+      const isPinned = currentDefault === cat;
+      const pinBtnStyle = isPinned 
+        ? 'color: #F59E0B; background: rgba(245, 158, 11, 0.1); border-color: #F59E0B;' 
+        : 'color: var(--text-light);';
+      
       div.innerHTML = `
-        <div style="display:flex; align-items:center;">
-          <span class="drag-handle">☰</span>
-          <span style="font-weight: 600; color:var(--text);">${cat} ${idx === 0 ? '<span style="font-size: 10px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: bold;">Default</span>' : ''}</span>
+        <div style="display:flex; align-items:center; gap: 8px;">
+          <button class="btn-outline btn-small pin-cat-btn" style="padding: 4px 8px; width: 30px; height: 30px; border-radius: 6px; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; ${pinBtnStyle}" title="Set as Personal Default Pinned Category">${isPinned ? '⭐' : '☆'}</button>
+          <span style="font-weight: 600; color:var(--text);">${cat}</span>
         </div>
-        <div style="display:flex; gap: 4px;">
+        <div class="cat-action-buttons" style="display:${hasRoomEditAccess ? 'flex' : 'none'}; gap: 4px;">
           <button class="btn-outline btn-small rename-cat-btn" style="padding: 4px 8px;">✏️</button>
           <button class="btn-danger btn-small remove-cat-btn" style="padding: 4px 8px;">🗑️</button>
         </div>
       `;
       
-      div.querySelector('.rename-cat-btn').addEventListener('click', () => renameCategoryPrompt(cat));
-      div.querySelector('.remove-cat-btn').addEventListener('click', () => removeCategory(cat));
+      div.querySelector('.pin-cat-btn').addEventListener('click', () => {
+        if (localStorage.getItem(key) === cat) {
+          localStorage.removeItem(key);
+          customAlert("Pin Removed 📌", `'${cat}' is no longer your default category.`);
+        } else {
+          localStorage.setItem(key, cat);
+          customAlert("Category Pinned ⭐", `'${cat}' is now set as your default category!`);
+        }
+        openCategoryModal();
+      });
+      
+      if (hasRoomEditAccess) {
+        div.querySelector('.rename-cat-btn').addEventListener('click', () => renameCategoryPrompt(cat));
+        div.querySelector('.remove-cat-btn').addEventListener('click', () => removeCategory(cat));
+      }
+      
+      listArea.appendChild(div);
+    });
+    document.getElementById('categoryModalOverlay').style.display = 'flex';
+  }
+  function closeCategoryModal() { document.getElementById('categoryModalOverlay').style.display = 'none'; }
+  function addNewCategory() { const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!"); }
+  function removeCategory(catName) { if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); }); }
+  function renameCategoryPrompt(oldName) { customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); }); }
+  function saveCategories(cats, msg) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken()); }
+
+  let tempTagsOrder = [];
+  let tagDragSrcIndex = null;
+
+  function openManageTagsModal() {
+    if (!hasRoomEditAccess) return;
+    const listArea = document.getElementById('manageTagsListArea');
+    listArea.innerHTML = '';
+    tagDragSrcIndex = null;
+    
+    const subjectSelect = document.getElementById('subjectSelect');
+    if (!subjectSelect || !subjectSelect.value) return;
+    const subject = subjectSelect.value;
+    
+    const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean);
+    const savedOrder = (allRooms[currentRoomId].tagsOrder && allRooms[currentRoomId].tagsOrder[subject]) || [];
+    
+    uniqueTags.sort((a, b) => {
+      let idxA = savedOrder.indexOf(a);
+      let idxB = savedOrder.indexOf(b);
+      if (idxA === -1) idxA = 999999;
+      if (idxB === -1) idxB = 999999;
+      return idxA - idxB;
+    });
+    
+    tempTagsOrder = [...uniqueTags];
+    renderTagReorderList();
+    document.getElementById('manageTagsModalOverlay').style.display = 'flex';
+  }
+
+  function renderTagReorderList() {
+    const listArea = document.getElementById('manageTagsListArea');
+    listArea.innerHTML = '';
+    
+    if (tempTagsOrder.length === 0) {
+      listArea.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:13px;">No tags found in this category.</p>';
+      return;
+    }
+    
+    tempTagsOrder.forEach((tag, idx) => {
+      const div = document.createElement('div');
+      div.className = 'print-tag-row';
+      div.setAttribute('draggable', 'true');
+      div.setAttribute('data-index', idx);
+      
+      div.innerHTML = `
+        <div style="display:flex; align-items:center; flex:1; min-width:0;">
+          <span class="print-drag-handle">☰</span>
+          <span style="font-weight:700; font-size:14px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${tag}</span>
+        </div>
+        <div style="display:flex; gap: 4px;">
+          <button class="btn-outline btn-small rename-tag-modal-btn" style="padding: 4px 8px;" title="Rename tag globally">✏️</button>
+        </div>
+      `;
+      
+      div.querySelector('.rename-tag-modal-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        renameTagPromptInModal(tag);
+      });
       
       div.addEventListener('dragstart', (e) => {
-        catDragSrcIndex = idx;
+        tagDragSrcIndex = idx;
         div.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', idx);
       });
       
       div.addEventListener('dragover', (e) => {
@@ -2902,31 +3059,78 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         e.stopPropagation();
         e.preventDefault();
         const targetIndex = parseInt(div.getAttribute('data-index'));
-        if (catDragSrcIndex !== null && catDragSrcIndex !== targetIndex) {
-          const reorderedCats = [...(allRooms[currentRoomId].categories || [])];
-          const draggedCat = reorderedCats[catDragSrcIndex];
-          reorderedCats.splice(catDragSrcIndex, 1);
-          reorderedCats.splice(targetIndex, 0, draggedCat);
-          saveCategories(reorderedCats, "Category reordered successfully!");
+        if (tagDragSrcIndex !== null && tagDragSrcIndex !== targetIndex) {
+          const draggedTag = tempTagsOrder[tagDragSrcIndex];
+          tempTagsOrder.splice(tagDragSrcIndex, 1);
+          tempTagsOrder.splice(targetIndex, 0, draggedTag);
+          renderTagReorderList();
         }
         return false;
       });
       
       div.addEventListener('dragend', (e) => {
         div.classList.remove('dragging');
-        const items = listArea.querySelectorAll('.cat-item');
+        const items = listArea.querySelectorAll('.print-tag-row');
         items.forEach(item => item.classList.remove('drag-over'));
       });
       
       listArea.appendChild(div);
     });
-    document.getElementById('categoryModalOverlay').style.display = 'flex';
   }
-  function closeCategoryModal() { document.getElementById('categoryModalOverlay').style.display = 'none'; }
-  function addNewCategory() { const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!"); }
-  function removeCategory(catName) { if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); }); }
-  function renameCategoryPrompt(oldName) { customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); }); }
-  function saveCategories(cats, msg) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken()); }
+
+  function renameTagPromptInModal(oldTag) {
+    customPrompt("Rename Group Tag", `Enter new name for '${oldTag}' globally:`, "text", (newTag) => {
+      if (!newTag) return;
+      newTag = newTag.trim();
+      if (newTag === oldTag || newTag === "") return;
+      
+      showLoader(true);
+      const subject = document.getElementById('subjectSelect').value;
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        if (res.success) {
+          currentQuestions = res.questions;
+          updateItemNumbers();
+          populateTagFilters();
+          
+          const idx = tempTagsOrder.indexOf(oldTag);
+          if (idx !== -1) {
+            tempTagsOrder[idx] = newTag;
+          }
+          
+          renderTagReorderList();
+          renderBank();
+          customAlert("Success", "Group tag renamed successfully!");
+        } else {
+          customAlert("Error", res.msg);
+        }
+      }).renameTagDB(currentRoomId, subject, oldTag, newTag, currentUser, getSessionToken());
+    });
+  }
+
+  function saveTagsOrderAction() {
+    showLoader(true);
+    const subject = document.getElementById('subjectSelect').value;
+    google.script.run.withSuccessHandler(res => {
+      showLoader(false);
+      if (res.success) {
+        allRooms = res.rooms;
+        updateItemNumbers();
+        renderBank();
+        closeManageTagsModal();
+        customAlert("Success", "Tags order saved successfully!");
+      } else {
+        customAlert("Error", res.msg);
+      }
+    }).withFailureHandler(err => {
+      showLoader(false);
+      customAlert("Error", "Server Error: " + err.message);
+    }).updateRoomTagsOrder(currentRoomId, subject, tempTagsOrder, currentUser, getSessionToken());
+  }
+
+  function closeManageTagsModal() {
+    document.getElementById('manageTagsModalOverlay').style.display = 'none';
+  }
 
   function applyMobileView(isMobile) { const globalHeader = document.getElementById('globalHeaderBar'); const appView = document.getElementById('mainAppView'); const dashView = document.getElementById('dashboardView'); if (isMobile) { if(globalHeader) globalHeader.classList.add('mobile-view'); if(appView) appView.classList.add('mobile-view'); if(dashView) dashView.classList.add('mobile-view'); } else { if(globalHeader) globalHeader.classList.remove('mobile-view'); if(appView) appView.classList.remove('mobile-view'); if(dashView) dashView.classList.remove('mobile-view'); } }
   
@@ -3072,6 +3276,14 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }
     }
   });
+
+  // Dismiss color picker when scrolling anywhere
+  document.addEventListener('scroll', () => {
+    const card = document.getElementById('modernColorPickerCard');
+    if (card && card.style.display === 'block') {
+      card.style.display = 'none';
+    }
+  }, true);
 
   function setThemeColor(primaryHex, hoverHex, clickedSwatch) {
     document.documentElement.style.setProperty('--primary', primaryHex);
@@ -3252,6 +3464,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
   
   function switchTab(tabId, element) {
+    if (tabId !== 'bankTab') {
+      if (typeof isBulkDeleteMode !== 'undefined' && isBulkDeleteMode) {
+        toggleBulkDelete();
+      }
+      editingQuestionId = null;
+    }
     const roomData = allRooms[currentRoomId];
     const isOwner = roomData && ((currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin);
     
@@ -3335,7 +3553,41 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
     return pKey; 
   }
-  function updateItemNumbers() { const counts = {}; currentQuestions.forEach(q => { const t = q.tag || "Untagged"; if (!counts[t]) counts[t] = 0; counts[t]++; q.displayItemNumber = counts[t]; }); }
+  function sortQuestionsByTagsOrder(qs) {
+    const subjectSelect = document.getElementById('subjectSelect');
+    if (!subjectSelect || !subjectSelect.value) return qs;
+    const subject = subjectSelect.value;
+    const room = allRooms[currentRoomId];
+    let tagsOrder = [];
+    if (room && room.tagsOrder && room.tagsOrder[subject]) {
+      tagsOrder = room.tagsOrder[subject];
+    }
+    
+    qs.sort((a, b) => {
+      const tagA = a.tag || "Untagged";
+      const tagB = b.tag || "Untagged";
+      let idxA = tagsOrder.indexOf(tagA);
+      let idxB = tagsOrder.indexOf(tagB);
+      if (idxA === -1) idxA = 999999;
+      if (idxB === -1) idxB = 999999;
+      if (idxA !== idxB) {
+        return idxA - idxB;
+      }
+      return (a.displayItemNumber || 0) - (b.displayItemNumber || 0);
+    });
+    return qs;
+  }
+
+  function updateItemNumbers() {
+    sortQuestionsByTagsOrder(currentQuestions);
+    const counts = {};
+    currentQuestions.forEach(q => {
+      const t = q.tag || "Untagged";
+      if (!counts[t]) counts[t] = 0;
+      counts[t]++;
+      q.displayItemNumber = counts[t];
+    });
+  }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
   function populateTagFilters() { const filterQuiz = document.getElementById('tagFilter'); const filterBank = document.getElementById('bankTagFilter'); const currQuiz = filterQuiz.value; const currBank = filterBank.value; filterQuiz.innerHTML = '<option value="ALL">All Groups Combined</option>'; filterBank.innerHTML = '<option value="ALL">Filter: All Groups</option>'; const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean); uniqueTags.forEach(tag => { filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`; filterBank.innerHTML += `<option value="${tag}">${tag}</option>`; }); if(uniqueTags.includes(currQuiz)) filterQuiz.value = currQuiz; if(uniqueTags.includes(currBank)) filterBank.value = currBank; }
   function saveToServer(callback) { const subject = document.getElementById('subjectSelect').value; showLoader(true); google.script.run.withSuccessHandler(res => { updateBadge(); populateTagFilters(); populateAddTagFilters(); showLoader(false); if(callback) callback(); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to save to database."); }).saveQuestionsJSON(currentRoomId, subject, currentQuestions, currentUser, getSessionToken()); }
@@ -4212,16 +4464,44 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     setTimeout(() => win.print(), 500);
   }
 
-  function executeGoogleDocExport() {
-    if (selectedPrintTags.length === 0) { customAlert("Wait", "Please add at least one tag."); return; }
-    const sel = document.getElementById('subjectSelect'); if (!sel || !sel.value) return;
-    showLoader(true);
-    google.script.run.withSuccessHandler(res => {
-      showLoader(false);
-      if (res && res.success) {
-        customConfirm("Export Successful! 🎉", "Google Doc created:\n\"" + res.docName + "\"\n\n⚠️ NOTE: This document will be auto-deleted in 24 hours. Please select 'File' > 'Make a copy' to save a permanent copy to your Google Drive.\n\nOpen now?", () => window.open(res.url, '_blank'));
-      } else { customAlert("Export Failed ❌", res ? res.msg : "Unknown error."); }
-    }).withFailureHandler(err => { showLoader(false); customAlert("Error ❌", err.message); }).exportRoomToGoogleDoc(currentRoomId, sel.value, selectedPrintTags, currentUser, getSessionToken(), getRoomPassword(currentRoomId));
+  async function executeGoogleDocExport() {
+    if (selectedPrintTags.length === 0) { 
+      customAlert("Wait", "Please add at least one tag to export."); 
+      return; 
+    }
+    const sel = document.getElementById('subjectSelect'); 
+    if (!sel || !sel.value) return;
+    
+    const msg = `<b>Why Download directly? 🛡️</b><br><br>` +
+                `Connecting directly to your Google Drive folder requires granting full access permissions, which raises <b>major privacy & security concerns</b>.<br><br>` +
+                `Instead, we generate a high-fidelity <b>formatted Microsoft Word (.doc) file</b> of your exam.<br><br>` +
+                `<b>Easy Google Drive Save:</b><br>` +
+                `1. Click "Download" below to save the file.<br>` +
+                `2. Drag & drop the downloaded file directly into your preferred Google Drive folder!<br>` +
+                `3. Double-click it in Google Drive to open it as a fully editable Google Doc.`;
+                
+    customConfirm("Secure Document Export", msg, async () => {
+      showLoader(true);
+      try {
+        const res = await exportRoomToGoogleDoc(currentRoomId, sel.value, selectedPrintTags, currentUser, getSessionToken(), getRoomPassword(currentRoomId));
+        showLoader(false);
+        if (res.success && res.url) {
+          const a = document.createElement('a');
+          a.href = res.url;
+          a.download = `${res.docName}.doc`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          customAlert("Export Complete 🎉", "Your formatted document has been downloaded. Drag it into your Google Drive folder to save as a Google Doc!");
+        } else {
+          customAlert("Export Failed ❌", res.msg || "Unknown error.");
+        }
+      } catch (err) {
+        showLoader(false);
+        customAlert("Error ❌", err.message);
+      }
+    });
   }
 
   function changeQuestionOrder(id, newNumStr) { const newNum = parseInt(newNumStr); if(isNaN(newNum) || newNum < 1) { renderBank(); return; } const idx = currentQuestions.findIndex(x => x.id === id); if(idx === -1) return; const targetQ = currentQuestions[idx]; const tag = targetQ.tag; let tagQs = currentQuestions.filter(x => x.tag === tag); const localIdx = tagQs.findIndex(x => x.id === id); tagQs.splice(localIdx, 1); let targetLocalIdx = newNum - 1; if(targetLocalIdx > tagQs.length) targetLocalIdx = tagQs.length; tagQs.splice(targetLocalIdx, 0, targetQ); let newCurrent = []; let tagCounter = 0; currentQuestions.forEach(q => { if(q.tag === tag) { newCurrent.push(tagQs[tagCounter]); tagCounter++; } else newCurrent.push(q); }); currentQuestions = newCurrent; updateItemNumbers(); renderBank(); saveToServer(); }
@@ -4257,7 +4537,6 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const filterTag = document.getElementById('bankTagFilter').value; 
       const searchQ = document.getElementById('bankSearchInput').value.toLowerCase();
       let displayQs = currentQuestions;
-      document.getElementById('renameTagBtn').style.display = (filterTag !== "ALL" && hasRoomEditAccess) ? 'inline-block' : 'none';
       if(filterTag !== "ALL") displayQs = displayQs.filter(q => q.tag === filterTag);
       if(searchQ) {
         const cleanHTML = (str) => (str || '').replace(/<[^>]*>/g, '').toLowerCase();
