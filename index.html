@@ -578,17 +578,77 @@
     }
 
     /* Balanced Profile & Settings Buttons Size */
-    #circularProfileBtn, #globalHeaderBar button[onclick="openSettingsModal()"] {
-      width: 34px !important;
-      height: 34px !important;
-      min-width: 34px !important;
-      max-width: 34px !important;
-      font-size: 14px !important;
-      line-height: 34px !important;
+    #circularProfileBtn, #globalHeaderBar button[onclick="openSettingsModal()"], #authModalOverlay button[onclick="openSettingsModal()"] {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      max-width: 32px !important;
+      font-size: 13px !important;
+      line-height: 1 !important;
       padding: 0 !important;
-      display: flex !important;
+      border-radius: 50% !important;
+      display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
+      vertical-align: middle !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Premium Tab Sliding Scroller Layout */
+    .tabs-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .tabs-scroll-container {
+      display: flex !important;
+      overflow-x: auto !important;
+      scroll-behavior: smooth !important;
+      width: 100% !important;
+      scrollbar-width: none !important; /* Firefox */
+      -ms-overflow-style: none !important; /* IE 10+ */
+      flex-wrap: nowrap !important;
+      margin-bottom: 0 !important;
+      border-bottom: 2px solid var(--border) !important;
+      padding-bottom: 5px !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    .tabs-scroll-container::-webkit-scrollbar {
+      display: none !important; /* Safari and Chrome */
+    }
+    .tab-arrow-btn {
+      background: var(--surface) !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 50% !important;
+      display: none; /* Dynamically shown by JS setupTabScroller */
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      position: absolute !important;
+      z-index: 100 !important;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+      transition: all 0.2s ease !important;
+      user-select: none !important;
+      font-size: 11px !important;
+      padding: 0 !important;
+    }
+    .tab-arrow-btn:hover {
+      background: var(--primary) !important;
+      color: white !important;
+      border-color: var(--primary) !important;
+      transform: scale(1.1) !important;
+    }
+    .tab-arrow-btn.left {
+      left: 4px !important;
+    }
+    .tab-arrow-btn.right {
+      right: 4px !important;
     }
 
     /* Prevent Checkbox/Radio Squishing */
@@ -835,14 +895,21 @@
       <div class="custom-picker-swatch" id="customPickerDashboard"></div>
     </div>
     <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
-      <div class="user-profile-btn" onclick="handleProfileClick()" title="Profile & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none; padding: 0 !important; flex-shrink: 0; min-width: 40px;" id="circularProfileBtn">👤</div>
-      <button class="btn-outline" onclick="openSettingsModal()" title="App & Account Settings" style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); width:40px; min-width:40px;">⚙️</button>
+      <button class="btn-outline" onclick="openSettingsModal()" title="App Preferences" style="width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); min-width:32px; max-width:32px; flex-shrink: 0; line-height: 1;">⚙️</button>
+      <div class="user-profile-btn" onclick="handleProfileClick()" title="Profile & Account Settings" style="width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none; padding: 0 !important; flex-shrink: 0; min-width: 32px; max-width:32px; line-height: 1;" id="circularProfileBtn">👤</div>
     </div>
 </div>
 
 <div id="authModalOverlay" class="custom-modal-overlay" style="align-items: flex-start; padding-top: 80px;">
   <div class="custom-modal" style="text-align: left; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;"><div class="color-picker"><div class="color-swatch custom-picker-swatch active" id="customPickerAuth" onclick="toggleColorPickerCard(event, this)" style="background: var(--primary) !important; color: white !important; display: flex; align-items: center; justify-content: center; font-size: 14px; position: relative; cursor: pointer;" title="Custom Color">🎨</div></div><div style="display:flex; gap:10px;"><div class="switch-container" title="Dark Mode"><span style="font-size: 14px;">🌙</span><label class="switch"><input type="checkbox" id="darkModeToggleLogin" onchange="document.getElementById('darkModeToggle').click(); this.checked = document.getElementById('darkModeToggle').checked;"><span class="slider"></span></label></div><button class="btn-outline btn-small" id="authCloseBtn" style="border:none; padding:4px; font-size:16px;" onclick="closeAuthModal()">✖</button></div></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+      <div>
+        <button class="btn-outline" onclick="openSettingsModal()" title="App Preferences" style="width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); min-width:32px; max-width:32px; flex-shrink:0; line-height: 1;">⚙️</button>
+      </div>
+      <div>
+        <button class="btn-outline btn-small" id="authCloseBtn" style="border:none; padding:4px; font-size:16px; background:transparent;" onclick="closeAuthModal()">✖</button>
+      </div>
+    </div>
     <h2 style="text-align:center; color:var(--primary); margin-top:0;">Boards Reviewer</h2><p style="text-align:center; color:var(--text-light); font-size:14px; margin-top:-10px; margin-bottom:20px;">Master your concepts anywhere.</p>
     <div id="authForms">
         <div class="auth-tabs"><div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</div><div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</div></div>
@@ -856,8 +923,51 @@
         <div id="pinSubmitSection" style="display: none;"><p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 15px;">PIN sent! Check your email.</p><div class="input-wrapper"><label>6-Digit PIN</label><input type="number" id="resetPinInput" placeholder="123456" style="letter-spacing: 2px; font-size: 18px; text-align: center;" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><div class="input-wrapper"><label>New Password</label><input type="password" id="resetNewPass" placeholder="Enter new password" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><button onclick="submitNewPassword()" style="margin-bottom: 10px;">Change Password & Login</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
     </div>
     <div id="loggedInProfile" style="display: none; text-align: center;">
-        <p style="font-size: 16px; font-weight: 600; color: var(--text);">You are logged in as <span id="profileNameDisplay" style="color: var(--primary);"></span>.</p><p style="font-size: 14px; color: var(--text-light);">Your progress is safely auto-syncing to the cloud!</p><button class="btn-outline" id="manualSyncBtn" style="margin-top: 15px; border-color: var(--primary); color: var(--primary);" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore Progress)</button><button class="btn-danger" style="margin-top: 15px;" onclick="logoutUser()">Log Out</button>
-  </div>
+        <p style="font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 5px;">You are logged in as <span id="profileNameDisplay" style="color: var(--primary);"></span>.</p>
+        <p style="font-size: 13px; color: var(--text-light); margin-top: 0; margin-bottom: 20px;">Your progress is safely auto-syncing to the cloud!</p>
+        
+        <div id="settingsAccountSection" style="display: none; margin-bottom: 20px; text-align: left;">
+          <h4 style="margin:0 0 12px 0; color:var(--text-light); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">👤 Account Settings</h4>
+          <div style="display:flex; flex-direction:column; gap:15px; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 4px;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;">🔒 Hide Username</span>
+                <span style="font-size:11px; color:var(--text-light);">Hide your name in all room member lists</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="settingsGlobalPrivacyToggle" onchange="toggleGlobalPrivacyPreference()"><span class="slider"></span></label>
+            </div>
+            
+            <div class="input-wrapper" style="margin-bottom:0;">
+              <label style="font-size:11px;">Update Username</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="settingsUsernameInput" placeholder="New username..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+                <button class="btn-outline btn-small" onclick="updateAccountUsername()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+              </div>
+            </div>
+            
+            <div class="input-wrapper" style="margin-bottom:0;">
+              <label style="font-size:11px;">Update Email</label>
+              <div style="display:flex; gap:8px;">
+                <input type="email" id="settingsEmailInput" placeholder="new-email@domain.com" style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+                <button class="btn-outline btn-small" onclick="updateAccountEmail()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+              </div>
+            </div>
+            
+            <div class="input-wrapper" style="margin-bottom:0;">
+              <label style="font-size:11px;">Update Password</label>
+              <div style="display:flex; gap:8px;">
+                <input type="password" id="settingsPasswordInput" placeholder="New password..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+                <button class="btn-outline btn-small" onclick="updateAccountPassword()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:10px; width: 100%;">
+          <button class="btn-outline" id="manualSyncBtn" style="border-color: var(--primary); color: var(--primary); font-weight: bold; padding: 12px; font-size: 14px; width: 100%; border-radius: 8px;" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore Progress)</button>
+          <button class="btn-danger" style="padding: 12px; font-size: 14px; font-weight: bold; width: 100%; border-radius: 8px;" onclick="logoutUser()">Log Out</button>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -894,53 +1004,6 @@
             </div>
           </div>
         </div>
-      </div>
-      
-      <div id="settingsAccountSection" style="display: none; margin-bottom: 25px;">
-        <h4 style="margin:0 0 12px 0; color:var(--text-light); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">👤 Account Settings</h4>
-        <div style="display:flex; flex-direction:column; gap:15px; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 4px;">
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <span style="font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;">🔒 Hide Username</span>
-              <span style="font-size:11px; color:var(--text-light);">Hide your name in all room member lists</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="settingsGlobalPrivacyToggle" onchange="toggleGlobalPrivacyPreference()"><span class="slider"></span></label>
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label style="font-size:11px;">Update Username</label>
-            <div style="display:flex; gap:8px;">
-              <input type="text" id="settingsUsernameInput" placeholder="New username..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
-              <button class="btn-outline btn-small" onclick="updateAccountUsername()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
-            </div>
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label style="font-size:11px;">Update Email</label>
-            <div style="display:flex; gap:8px;">
-              <input type="email" id="settingsEmailInput" placeholder="new-email@domain.com" style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
-              <button class="btn-outline btn-small" onclick="updateAccountEmail()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
-            </div>
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label style="font-size:11px;">Update Password</label>
-            <div style="display:flex; gap:8px;">
-              <input type="password" id="settingsPasswordInput" placeholder="New password..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
-              <button class="btn-outline btn-small" onclick="updateAccountPassword()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div id="settingsGuestPrompt" style="display: block; margin-bottom: 25px; text-align:center; background:var(--surface-alt); padding:15px; border-radius:10px; border:1px solid var(--border);">
-        <p style="font-size:13px; color:var(--text-light); margin:0 0 10px 0;">Log in or Sign Up to unlock Cloud Sync, create private rooms, and customize your account settings!</p>
-        <button class="btn-success" onclick="closeSettingsModal(); openAuthModal();" style="font-size:13px; padding:8px 16px; width:auto; height:auto;">Log In / Register</button>
-      </div>
-      
-      <div id="settingsActionsSection" style="display:none; flex-direction:column; gap:10px;">
-        <button class="btn-outline" id="settingsManualSyncBtn" style="border-color: var(--primary); color: var(--primary); font-weight:bold; padding: 12px; font-size:14px; width:100%; border-radius:8px;" onclick="pullCloudProgress()">☁️ Manual Cloud Sync (Backup/Restore)</button>
-        <button class="btn-danger" style="padding: 12px; font-size:14px; font-weight:bold; width:100%; border-radius:8px;" onclick="logoutUserFromSettings()">Log Out</button>
       </div>
     </div>
   </div>
@@ -985,8 +1048,12 @@
 
 <div id="dashboardView" class="container" style="display:none; max-width: 800px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 15px; flex-wrap: wrap; gap: 15px;"><h1 style="margin:0; text-align:left; font-size: 24px;">Room Dashboard</h1></div>
-    <div class="auth-tabs" style="margin-bottom: 20px;">
-        <div class="auth-tab active" id="tabPublicRooms" onclick="switchRoomTab('public')">Public</div><div class="auth-tab" id="tabMyRooms" onclick="switchRoomTab('my')">Created</div><div class="auth-tab" id="tabJoinedRooms" onclick="switchRoomTab('joined')">Joined</div><div class="auth-tab" id="tabJoinRoom" onclick="switchRoomTab('join')">Join via Code</div><div class="auth-tab" id="tabCreateRoom" onclick="switchRoomTab('create')">Create</div><div class="auth-tab" id="tabAdminPanel" onclick="switchRoomTab('admin')" style="display:none; color:var(--danger);">Admin Panel</div>
+    <div class="tabs-wrapper" id="dashboardTabsWrapper" style="margin-bottom: 20px;">
+      <button class="tab-arrow-btn left" onclick="scrollTabs('dashboardTabs', -100)">◀</button>
+      <div class="auth-tabs tabs-scroll-container" id="dashboardTabs" style="margin-bottom: 0 !important; width: 100%;">
+          <div class="auth-tab active" id="tabPublicRooms" onclick="switchRoomTab('public')">Public</div><div class="auth-tab" id="tabMyRooms" onclick="switchRoomTab('my')">Created</div><div class="auth-tab" id="tabJoinedRooms" onclick="switchRoomTab('joined')">Joined</div><div class="auth-tab" id="tabJoinRoom" onclick="switchRoomTab('join')">Join via Code</div><div class="auth-tab" id="tabCreateRoom" onclick="switchRoomTab('create')">Create</div><div class="auth-tab" id="tabAdminPanel" onclick="switchRoomTab('admin')" style="display:none; color:var(--danger);">Admin Panel</div>
+      </div>
+      <button class="tab-arrow-btn right" onclick="scrollTabs('dashboardTabs', 100)">▶</button>
     </div>
     <div id="roomSearchArea" style="margin-bottom: 15px; display: none;"><input type="text" id="roomSearchInput" placeholder="Search rooms by name or code..." onkeyup="renderRoomList('public')" style="padding: 10px; width: 100%;"></div>
     <div id="roomListArea" style="max-height: 400px; overflow-y: auto; display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));"></div>
@@ -1003,7 +1070,18 @@
 <div class="container" id="mainAppView" style="display:none;">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;"><h1 id="mainQuizTitle" style="margin:0;">Boards Reviewer</h1><button id="editRoomInfoBtn" class="btn-outline btn-small" style="display:none; padding: 4px 8px; border:none;" onclick="openEditRoomModal()" title="Edit Room Title & Details">✏️</button></div>
   <div class="global-header"><div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 450px;"><select id="subjectSelect" onchange="loadSubjectData()" style="flex: 1;"></select><button class="btn-outline btn-small" onclick="openCategoryModal()" title="Manage Categories" style="padding: 10px 15px; border: 1px solid var(--border);" id="editCategoriesBtn">⚙️</button></div><div id="statusBadge" class="status-badge">0 Questions in Bank</div></div>
-  <div class="tabs"><div class="tab active" onclick="switchTab('quizTab', this)">Take Quiz</div><div class="tab" onclick="switchTab('pinnedTab', this)" id="tabPinned">⭐ Pinned</div><div class="tab" onclick="switchTab('peopleTab', this)" id="tabPeople">👥 People</div><div class="tab" onclick="switchTab('databaseTab', this)" id="tabAddQuestions">Add Questions</div><div class="tab" onclick="switchTab('bankTab', this)" id="tabManageBank">Manage Bank</div><div class="tab" onclick="switchTab('permissionsTab', this)" id="tabManagePermissions" style="display:none;">👥 Permissions</div></div>
+  <div class="tabs-wrapper" id="quizTabsWrapper" style="margin-bottom: 20px;">
+    <button class="tab-arrow-btn left" onclick="scrollTabs('quizTabs', -100)">◀</button>
+    <div class="tabs tabs-scroll-container" id="quizTabs" style="margin-bottom: 0 !important; width: 100%;">
+      <div class="tab active" onclick="switchTab('quizTab', this)">Take Quiz</div>
+      <div class="tab" onclick="switchTab('pinnedTab', this)" id="tabPinned">Pinned</div>
+      <div class="tab" onclick="switchTab('peopleTab', this)" id="tabPeople">People</div>
+      <div class="tab" onclick="switchTab('databaseTab', this)" id="tabAddQuestions">Add Questions</div>
+      <div class="tab" onclick="switchTab('bankTab', this)" id="tabManageBank">Manage Bank</div>
+      <div class="tab" onclick="switchTab('permissionsTab', this)" id="tabManagePermissions" style="display:none;">Permissions</div>
+    </div>
+    <button class="tab-arrow-btn right" onclick="scrollTabs('quizTabs', 100)">▶</button>
+  </div>
 
   <div id="quizTab" class="panel active">
     <div class="quiz-controls" id="quizSettingsArea" style="border-radius: 8px; border-color: var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -1031,7 +1109,7 @@
                 <input type="checkbox" id="shuffleOptionsToggle">
                 <span class="slider"></span>
               </label>
-              <span style="font-size: 14px; font-weight: 600; color: var(--text);">Randomize Options <span style="font-weight: normal; color: var(--text-light);">(Shuffle A, B, C, D)</span></span>
+              <span style="font-size: 14px; font-weight: 600; color: var(--text);">Randomize Options</span>
             </div>
           </div>
         </div>
@@ -2383,7 +2461,81 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function getSessionToken() { return localStorage.getItem('psych_session_token') || ""; }
   function getRoomPassword(roomId) { return localStorage.getItem('psych_room_pwd_' + roomId) || ""; }
 
-  window.onload = function() { currentUser = localStorage.getItem('psych_current_user') || sessionStorage.getItem('psych_current_user') || ''; loadThemePreferences(); initColorSliders(); initKeyboardShortcuts(); try { seenQuestions = JSON.parse(localStorage.getItem('psych_seen_questions')) || {}; } catch(e) { seenQuestions = {}; } if (!currentUser) { document.getElementById('authModalOverlay').style.display = 'flex'; const closeBtn = document.getElementById('authCloseBtn'); if(closeBtn) closeBtn.style.display = 'none'; } else { isAdmin = (currentUser.toLowerCase() === 'admin'); fetchRoomsAndLoadDashboard(); } };
+  let updateDashboardTabsScroller = null;
+  let updateQuizTabsScroller = null;
+
+  function scrollTabs(containerId, offset) {
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  }
+
+  function setupTabScroller(wrapperId, containerId) {
+    const wrapper = document.getElementById(wrapperId);
+    const container = document.getElementById(containerId);
+    if (!wrapper || !container) return null;
+
+    const leftArrow = wrapper.querySelector('.tab-arrow-btn.left');
+    const rightArrow = wrapper.querySelector('.tab-arrow-btn.right');
+    if (!leftArrow || !rightArrow) return null;
+
+    function updateArrows() {
+      const scrollLeft = container.scrollLeft;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      const maxScroll = scrollWidth - clientWidth;
+
+      if (scrollLeft > 2) {
+        leftArrow.style.display = 'inline-flex';
+      } else {
+        leftArrow.style.display = 'none';
+      }
+
+      if (scrollWidth > clientWidth && scrollLeft < maxScroll - 2) {
+        rightArrow.style.display = 'inline-flex';
+      } else {
+        rightArrow.style.display = 'none';
+      }
+    }
+
+    container.addEventListener('scroll', updateArrows);
+    window.addEventListener('resize', updateArrows);
+    
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => updateArrows());
+      ro.observe(container);
+    }
+    
+    setTimeout(updateArrows, 100);
+    return updateArrows;
+  }
+
+  window.onload = function() {
+    currentUser = localStorage.getItem('psych_current_user') || sessionStorage.getItem('psych_current_user') || '';
+    loadThemePreferences();
+    initColorSliders();
+    initKeyboardShortcuts();
+    
+    // Initialize premium tab scrollers
+    updateDashboardTabsScroller = setupTabScroller('dashboardTabsWrapper', 'dashboardTabs');
+    updateQuizTabsScroller = setupTabScroller('quizTabsWrapper', 'quizTabs');
+    
+    try {
+      seenQuestions = JSON.parse(localStorage.getItem('psych_seen_questions')) || {};
+    } catch(e) {
+      seenQuestions = {};
+    }
+    
+    if (!currentUser) {
+      document.getElementById('authModalOverlay').style.display = 'flex';
+      const closeBtn = document.getElementById('authCloseBtn');
+      if(closeBtn) closeBtn.style.display = 'none';
+    } else {
+      isAdmin = (currentUser.toLowerCase() === 'admin');
+      fetchRoomsAndLoadDashboard();
+    }
+  };
   function playAsGuest() {
     currentUser = 'Guest';
     sessionStorage.setItem('psych_current_user', 'Guest');
@@ -2522,6 +2674,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       });
       if(document.getElementById('tabAdminPanel')) document.getElementById('tabAdminPanel').style.display = isAdmin ? 'inline-block' : 'none';
       switchRoomTab('public');
+      if (updateDashboardTabsScroller) setTimeout(updateDashboardTabsScroller, 50);
       handleUrlParams();
     } catch (err) {
       console.error("Error in finalizeDashboardLoad:", err);
@@ -2533,7 +2686,60 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
   }
 
-  function openAuthModal() { document.getElementById('authErrorText').style.display = 'none'; if (currentUser !== 'Guest' && currentUser !== '') { document.getElementById('authForms').style.display = 'none'; document.getElementById('loggedInProfile').style.display = 'block'; document.getElementById('profileNameDisplay').innerText = currentUser === 'Admin' ? 'Master Admin' : currentUser; document.getElementById('manualSyncBtn').style.display = 'inline-block'; const closeBtn = document.getElementById('authCloseBtn'); if(closeBtn) closeBtn.style.display = 'block'; } else { document.getElementById('authForms').style.display = 'block'; document.getElementById('loggedInProfile').style.display = 'none'; document.getElementById('manualSyncBtn').style.display = 'none'; const closeBtn = document.getElementById('authCloseBtn'); if(currentUser === 'Guest') { if(closeBtn) closeBtn.style.display = 'block'; } else { if(closeBtn) closeBtn.style.display = 'none'; } } document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authModalOverlay').style.display = 'flex'; }
+  function openAuthModal() {
+    document.getElementById('authErrorText').style.display = 'none';
+    if (currentUser !== 'Guest' && currentUser !== '') {
+      document.getElementById('authForms').style.display = 'none';
+      document.getElementById('loggedInProfile').style.display = 'block';
+      document.getElementById('profileNameDisplay').innerText = currentUser === 'Admin' ? 'Master Admin' : currentUser;
+      document.getElementById('manualSyncBtn').style.display = 'inline-block';
+      
+      const closeBtn = document.getElementById('authCloseBtn');
+      if(closeBtn) closeBtn.style.display = 'block';
+      
+      // Populate Account Settings
+      const settingsAccount = document.getElementById('settingsAccountSection');
+      if (settingsAccount) settingsAccount.style.display = 'block';
+      
+      const usernameInput = document.getElementById('settingsUsernameInput');
+      const passwordInput = document.getElementById('settingsPasswordInput');
+      const emailInput = document.getElementById('settingsEmailInput');
+      
+      if (usernameInput) usernameInput.value = currentUser;
+      if (passwordInput) passwordInput.value = '';
+      
+      const user = auth.currentUser;
+      if (user) {
+        if (emailInput) emailInput.value = user.email || '';
+        db.collection('users').doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const privacyToggle = document.getElementById('settingsGlobalPrivacyToggle');
+            if (privacyToggle) privacyToggle.checked = !!doc.data().isGloballyPrivate;
+          }
+        }).catch(dbErr => {
+          console.warn("Could not retrieve global privacy setting:", dbErr);
+        });
+      } else {
+        if (emailInput) emailInput.value = '';
+      }
+    } else {
+      document.getElementById('authForms').style.display = 'block';
+      document.getElementById('loggedInProfile').style.display = 'none';
+      document.getElementById('manualSyncBtn').style.display = 'none';
+      
+      const settingsAccount = document.getElementById('settingsAccountSection');
+      if (settingsAccount) settingsAccount.style.display = 'none';
+      
+      const closeBtn = document.getElementById('authCloseBtn');
+      if(currentUser === 'Guest') {
+        if(closeBtn) closeBtn.style.display = 'block';
+      } else {
+        if(closeBtn) closeBtn.style.display = 'none';
+      }
+    }
+    document.getElementById('forgotPasswordForms').style.display = 'none';
+    document.getElementById('authModalOverlay').style.display = 'flex';
+  }
   function closeAuthModal() { if(currentUser) document.getElementById('authModalOverlay').style.display = 'none'; }
   function switchAuthTab(mode) { authMode = mode; document.getElementById('authErrorText').style.display = 'none'; document.getElementById('tabLogin').className = mode === 'login' ? 'auth-tab active' : 'auth-tab'; document.getElementById('tabSignup').className = mode === 'signup' ? 'auth-tab active' : 'auth-tab'; document.getElementById('authActionBtn').innerText = mode === 'login' ? 'Log In' : 'Sign Up'; document.getElementById('emailWrapper').style.display = mode === 'signup' ? 'block' : 'none'; document.getElementById('confirmPassWrapper').style.display = mode === 'signup' ? 'block' : 'none'; document.getElementById('forgotPassText').style.display = mode === 'login' ? 'block' : 'none'; document.getElementById('authUsername').value = ''; document.getElementById('authPassword').value = ''; document.getElementById('authConfirmPassword').value = ''; document.getElementById('authEmail').value = ''; }
   function togglePasswords(show) { const type = show ? "text" : "password"; document.getElementById('authPassword').type = type; document.getElementById('authConfirmPassword').type = type; }
@@ -2823,6 +3029,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         if ((tab === 'public' || tab === 'joined') && searchArea) searchArea.style.display = 'block';
         renderRoomList(tab);
       }
+      if (updateDashboardTabsScroller) setTimeout(updateDashboardTabsScroller, 50);
     } catch (err) {
       console.error("Error in switchRoomTab:", err);
       try {
@@ -2903,7 +3110,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         const hasJoined = (safeJoinedRooms.includes(roomId) || data.creator === safeUser || isAdmin || (data.permissions && safeUserLower && data.permissions[safeUserLower]));
         const joinBtnText = hasJoined ? "🚪 Enter Room" : "🚪 Join";
         
-        card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${data.creator}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button class="btn-success" style="padding: 10px; font-size: 14px; width:100%;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
+        card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${data.creator}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button style="padding: 10px; font-size: 14px; width:100%; background: var(--primary); color: white;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
         listArea.appendChild(card);
       }
       if (!found) {
@@ -2920,7 +3127,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function toggleRoomCardPassword(roomId) { const pwInput = document.getElementById(`pw_display_${roomId}`); const toggleIcon = document.getElementById(`pw_toggle_${roomId}`); if(pwInput.type === 'password') { pwInput.type = 'text'; toggleIcon.innerText = '🙈'; } else { pwInput.type = 'password'; toggleIcon.innerText = '👁️'; } }
   function toggleNewRoomPassword(isPublic) { const passWrapper = document.getElementById('newRoomPassWrapper'); if (isPublic) { passWrapper.style.display = 'none'; } else { passWrapper.style.display = 'block'; } }
-  function toggleRoomPrivacy(roomId) { const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } executeTogglePrivacy(roomId, pass.trim()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { executeTogglePrivacy(roomId, ""); }); } }
+  function toggleRoomPrivacy(roomId) {
+  if (roomId === 'GLOBAL' && !isAdmin) {
+    customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+    return;
+  }
+  const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } executeTogglePrivacy(roomId, pass.trim()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { executeTogglePrivacy(roomId, ""); }); } }
   function executeTogglePrivacy(roomId, password) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); renderRoomList(activeTab && activeTab.id === 'tabMyRooms' ? 'my' : 'public'); customAlert("Success", res.msg); } else { customAlert("Error", res.msg); } }).toggleRoomPrivacyDB(roomId, currentUser, password, getSessionToken()); }
   function createNewRoom() { const name = document.getElementById('newRoomName').value.trim(); const desc = document.getElementById('newRoomDesc').value.trim(); const isPublic = document.getElementById('newRoomPublic').checked; const password = document.getElementById('newRoomPassword').value.trim(); if(!name) { customAlert("Error", "Please enter a Room Name."); return; } if(!isPublic && !password) { customAlert("Error", "Private rooms require a password."); return; } if(currentUser === 'Guest') { customAlert("Account Required", "You must log in to create your own room."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; document.getElementById('newRoomName').value = ''; document.getElementById('newRoomDesc').value = ''; document.getElementById('newRoomPassword').value = ''; document.getElementById('newRoomPublic').checked = true; toggleNewRoomPassword(true); if(!currentUserJoinedRooms.includes(res.newId)) currentUserJoinedRooms.push(res.newId); loadRoomIntoMainApp(res.newId); customAlert("Success", "Welcome to your new room: " + name); } else { customAlert("Error", res.msg); } }).createRoom(name, desc, isPublic, password, currentUser, getSessionToken()); }
   function attemptJoinRoomByClick(roomId, isPrivate) {
@@ -3121,9 +3333,22 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function openEditRoomModal() { if(!hasRoomEditAccess) return; setupEditRoomModal(currentRoomId); }
   function openEditRoomModalFromDash(roomId) { setupEditRoomModal(roomId); }
   function toggleEditModalPassword() { const pwInput = document.getElementById('editRoomPassword'); const toggleBtn = document.getElementById('toggleEditPassBtn'); if(pwInput.type === 'password') { pwInput.type = 'text'; toggleBtn.innerText = '🙈'; } else { pwInput.type = 'password'; toggleBtn.innerText = '👁️'; } }
-  function togglePrivacyFromModal() { const roomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room'); const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, pass.trim(), getSessionToken()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, "", getSessionToken()); }); } }
+  function togglePrivacyFromModal() {
+    const roomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room');
+    if (roomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, pass.trim(), getSessionToken()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, "", getSessionToken()); }); } }
   function closeEditRoomModal() { document.getElementById('editRoomModalOverlay').style.display = 'none'; }
-  function submitEditRoom() { const editRoomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room') || currentRoomId; const newName = document.getElementById('editRoomName').value.trim(); const newTitle = document.getElementById('editQuizTitle').value.trim(); const newDesc = document.getElementById('editRoomDesc').value.trim(); const newPass = document.getElementById('editRoomPassword').value.trim(); const allowPrint = document.getElementById('editRoomAllowPrint').checked; if(!newName) { customAlert("Error", "Room Name cannot be empty."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if (res.success) { allRooms = res.rooms; if(editRoomId === currentRoomId) { document.getElementById('mainQuizTitle').innerText = allRooms[currentRoomId].quizTitle || allRooms[currentRoomId].name; evaluateEditAccess(); } closeEditRoomModal(); const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); customAlert("Success", "Room updated!"); } else { customAlert("Error", res.msg); } }).updateRoomInfo(editRoomId, newName, newDesc, newTitle, newPass, currentUser, allowPrint, getSessionToken()); }
+  function submitEditRoom() {
+    const editRoomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room') || currentRoomId;
+    if (editRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      closeEditRoomModal();
+      return;
+    }
+    const newName = document.getElementById('editRoomName').value.trim(); const newTitle = document.getElementById('editQuizTitle').value.trim(); const newDesc = document.getElementById('editRoomDesc').value.trim(); const newPass = document.getElementById('editRoomPassword').value.trim(); const allowPrint = document.getElementById('editRoomAllowPrint').checked; if(!newName) { customAlert("Error", "Room Name cannot be empty."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if (res.success) { allRooms = res.rooms; if(editRoomId === currentRoomId) { document.getElementById('mainQuizTitle').innerText = allRooms[currentRoomId].quizTitle || allRooms[currentRoomId].name; evaluateEditAccess(); } closeEditRoomModal(); const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); customAlert("Success", "Room updated!"); } else { customAlert("Error", res.msg); } }).updateRoomInfo(editRoomId, newName, newDesc, newTitle, newPass, currentUser, allowPrint, getSessionToken()); }
   function populateSubjectDropdown() { const select = document.getElementById('subjectSelect'); if(!select) return; select.innerHTML = ''; if (allRooms[currentRoomId] && allRooms[currentRoomId].categories) { allRooms[currentRoomId].categories.forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.innerText = cat; select.appendChild(opt); }); } evaluateEditAccess(); }
   function evaluateEditAccess() {
     const roomData = allRooms[currentRoomId];
@@ -3132,10 +3357,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     let isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin;
     let isEditor = currentUser !== 'Guest' && roomData.permissions && (roomData.permissions[currentUser.toLowerCase()] === 'editor');
     
-    // Protect Global Tutorial Room from modifications by regular users
+    // In Global Tutorial Room, make all options visible and clickable for everyone
     if (currentRoomId === 'GLOBAL') {
-      isOwner = isAdmin;
-      isEditor = false;
+      isOwner = true;
+      isEditor = true;
     }
     
     hasRoomEditAccess = isOwner || isEditor;
@@ -3160,12 +3385,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       document.getElementById('manageTagsBtn').style.display = 'none';
     }
     
-    // Disable Category management in global tutorial room
-    if (currentRoomId === 'GLOBAL') {
-      document.getElementById('editCategoriesBtn').style.display = 'none';
-    } else {
-      document.getElementById('editCategoriesBtn').style.display = 'inline-block';
-    }
+    // Categories are also editable/manageable in the tutorial room
+    document.getElementById('editCategoriesBtn').style.display = 'inline-block';
     
     const activeTabPanel = document.querySelector('.panel.active');
     if (activeTabPanel) {
@@ -3182,6 +3403,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       switchAddMode('single');
       populateAddTagFilters();
     }
+    
+    // Trigger quiz tabs scroller update dynamically
+    if (updateQuizTabsScroller) setTimeout(updateQuizTabsScroller, 50);
   }
   
   function openCategoryModal() {
@@ -3239,10 +3463,34 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('categoryModalOverlay').style.display = 'flex';
   }
   function closeCategoryModal() { document.getElementById('categoryModalOverlay').style.display = 'none'; }
-  function addNewCategory() { const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!"); }
-  function removeCategory(catName) { if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); }); }
-  function renameCategoryPrompt(oldName) { customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); }); }
-  function saveCategories(cats, msg) { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken()); }
+  function addNewCategory() {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!");
+  }
+  function removeCategory(catName) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); });
+  }
+  function renameCategoryPrompt(oldName) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); });
+  }
+  function saveCategories(cats, msg) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken());
+  }
 
   let tempTagsOrder = [];
   let tagDragSrcIndex = null;
@@ -3766,6 +4014,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       switchAddMode('single');
       populateAddTagFilters();
     }
+    if (updateQuizTabsScroller) setTimeout(updateQuizTabsScroller, 50);
   }
 
   function loadSubjectData() { 
@@ -3857,7 +4106,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
   function populateTagFilters() { const filterQuiz = document.getElementById('tagFilter'); const filterBank = document.getElementById('bankTagFilter'); const currQuiz = filterQuiz.value; const currBank = filterBank.value; filterQuiz.innerHTML = '<option value="ALL">All Groups Combined</option>'; filterBank.innerHTML = '<option value="ALL">Filter: All Groups</option>'; const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean); uniqueTags.forEach(tag => { filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`; filterBank.innerHTML += `<option value="${tag}">${tag}</option>`; }); if(uniqueTags.includes(currQuiz)) filterQuiz.value = currQuiz; if(uniqueTags.includes(currBank)) filterBank.value = currBank; }
-  function saveToServer(callback) { const subject = document.getElementById('subjectSelect').value; showLoader(true); google.script.run.withSuccessHandler(res => { updateBadge(); populateTagFilters(); populateAddTagFilters(); showLoader(false); if(callback) callback(); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to save to database."); }).saveQuestionsJSON(currentRoomId, subject, currentQuestions, currentUser, getSessionToken()); }
+  function saveToServer(callback) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      showLoader(false);
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      if (callback) callback();
+      return;
+    }
+    const subject = document.getElementById('subjectSelect').value; showLoader(true); google.script.run.withSuccessHandler(res => { updateBadge(); populateTagFilters(); populateAddTagFilters(); showLoader(false); if(callback) callback(); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to save to database."); }).saveQuestionsJSON(currentRoomId, subject, currentQuestions, currentUser, getSessionToken());
+  }
   function saveSessionState() { const subject = document.getElementById('subjectSelect').value; const pKey = getProgressKey(); const state = { pendingQueue, sessionHistory, currentHistoryIndex, sessionScore, sessionAttempted, sessionTotalSeconds }; localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, JSON.stringify(state)); }
   function clearSessionState() { const subject = document.getElementById('subjectSelect').value; const pKey = getProgressKey(); localStorage.removeItem(`psych_state_${currentRoomId}_${subject}_${pKey}`); }
   function handleTagSwitch() { const subjectSelect = document.getElementById('subjectSelect'); if(!subjectSelect || !subjectSelect.value) return; const subject = subjectSelect.value; const pKey = initSubjectMemory(subject); const savedState = localStorage.getItem(`psych_state_${currentRoomId}_${subject}_${pKey}`); if (savedState) { const s = JSON.parse(savedState); pendingQueue = s.pendingQueue || []; sessionHistory = s.sessionHistory || []; currentHistoryIndex = s.currentHistoryIndex !== undefined ? s.currentHistoryIndex : -1; sessionScore = s.sessionScore || 0; sessionAttempted = s.sessionAttempted || 0; sessionTotalSeconds = s.sessionTotalSeconds || 0; filteredQs = currentQuestions; const selectedTag = document.getElementById('tagFilter').value; if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag); if (sessionHistory.length > 0 && currentHistoryIndex !== -1) { currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]); if(!currentQuestionObj) { clearSessionState(); seenQuestions[currentRoomId][subject][pKey] = {}; syncToCloud(); pendingQueue = filteredQs.map(q => q.id); sessionHistory = []; currentHistoryIndex = -1; sessionScore = 0; sessionAttempted = 0; sessionTotalSeconds = 0; updateScoreUI(); document.getElementById('quizArea').style.display = 'none'; customAlert("Quiz Reset", "The question you were answering is no longer in the bank. Progress for this group reset."); return; } } else { currentQuestionObj = null; } } else { buildQueue(); sessionHistory = []; currentHistoryIndex = -1; currentQuestionObj = null; sessionAttempted = 0; sessionScore = 0; sessionTotalSeconds = 0; const mode = document.querySelector('input[name="mode"]:checked').value; if (mode === 'session') { filteredQs.forEach(q => { const userAns = seenQuestions[currentRoomId][subject][pKey][q.id]; if (userAns) { sessionAttempted++; if (userAns === q.correct) sessionScore++; } }); } } updateScoreUI(); document.getElementById('quizArea').style.display = 'none'; document.getElementById('quizSettingsArea').style.display = 'block'; }
@@ -4274,7 +4531,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function addSingleOptionRow() { const container = document.getElementById('singleOptionsContainer'); const row = document.createElement('div'); row.className = 'add-q-row'; row.innerHTML = `<span class="opt-letter-label"></span><div class="single-opt-input" contenteditable="true" data-letter="" style="flex:1; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--input-bg); min-height: 20px; outline:none;" oninput="updateSingleAnswerDropdown()"></div><button class="btn-danger btn-small" style="padding: 12px;" onclick="removeSingleOptionRow(this)" title="Delete Option">🗑️</button>`; container.appendChild(row); singleOptionCount++; recalcSingleOptionLetters(); }
   function removeSingleOptionRow(btnElement) { if (document.querySelectorAll('.add-q-row').length <= 2) return; btnElement.parentElement.remove(); singleOptionCount--; recalcSingleOptionLetters(); }
   function updateSingleAnswerDropdown() { const select = document.getElementById('singleAns'); const currentVal = select.value; select.innerHTML = ''; const optInputs = document.querySelectorAll('.single-opt-input'); optInputs.forEach(input => { const letter = input.getAttribute('data-letter'); const opt = document.createElement('option'); opt.value = letter; opt.innerText = letter.toUpperCase(); select.appendChild(opt); }); if(select.querySelector(`option[value="${currentVal}"]`)) select.value = currentVal; }
-  function saveSingleQuestion() { const select = document.getElementById('addTagSelect'); const tag = select.value === '__NEW__' ? document.getElementById('addTagNewInput').value.trim() : select.value; if(!tag) { customAlert("Wait", "Please provide a Tag/Group name."); return; } const text = document.getElementById('singleQTextEditor').innerHTML.trim(); if(!text || text === "<br>") { customAlert("Wait", "Question text cannot be empty."); return; } const ans = document.getElementById('singleAns').value.trim().toLowerCase(); if(!ans) { customAlert("Wait", "Please select a Correct Answer."); return; } const rationale = document.getElementById('singleRationaleEditor').innerHTML.trim(); const imgUrl = document.getElementById('singleImgUrl').value.trim(); const rationaleImgUrl = document.getElementById('singleRationaleImgUrl') ? document.getElementById('singleRationaleImgUrl').value.trim() : ""; const linkGroup = document.getElementById('singleLinkGroup').value.trim(); const optInputs = document.querySelectorAll('.single-opt-input'); let options = []; optInputs.forEach(input => { if (input.innerHTML.trim() && input.innerHTML.trim() !== "<br>") options.push({ letter: input.getAttribute('data-letter'), text: input.innerHTML.trim() }); }); if(options.length < 2) { customAlert("Wait", "Please fill out at least 2 options."); return; } const newQ = { id: "q_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5), text: text, options: options, correct: ans, tag: tag, rationale: rationale, imageUrl: imgUrl, rationaleImageUrl: rationaleImgUrl, linkGroup: linkGroup, displayItemNumber: 0 }; currentQuestions.push(newQ); updateItemNumbers(); saveToServer(() => { document.getElementById('addStatus').innerText = "Question added!"; document.getElementById('singleQTextEditor').innerHTML = ''; document.getElementById('singleRationaleEditor').innerHTML = ''; document.getElementById('singleImgUrl').value = ''; if(document.getElementById('singleRationaleImgUrl')) document.getElementById('singleRationaleImgUrl').value = ''; document.getElementById('singleLinkGroup').value = ''; document.querySelectorAll('.single-opt-input').forEach(i => i.innerHTML = ''); setTimeout(() => document.getElementById('addStatus').innerText = "", 3000); }); }
+  function saveSingleQuestion() {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
+    const select = document.getElementById('addTagSelect'); const tag = select.value === '__NEW__' ? document.getElementById('addTagNewInput').value.trim() : select.value; if(!tag) { customAlert("Wait", "Please provide a Tag/Group name."); return; } const text = document.getElementById('singleQTextEditor').innerHTML.trim(); if(!text || text === "<br>") { customAlert("Wait", "Question text cannot be empty."); return; } const ans = document.getElementById('singleAns').value.trim().toLowerCase(); if(!ans) { customAlert("Wait", "Please select a Correct Answer."); return; } const rationale = document.getElementById('singleRationaleEditor').innerHTML.trim(); const imgUrl = document.getElementById('singleImgUrl').value.trim(); const rationaleImgUrl = document.getElementById('singleRationaleImgUrl') ? document.getElementById('singleRationaleImgUrl').value.trim() : ""; const linkGroup = document.getElementById('singleLinkGroup').value.trim(); const optInputs = document.querySelectorAll('.single-opt-input'); let options = []; optInputs.forEach(input => { if (input.innerHTML.trim() && input.innerHTML.trim() !== "<br>") options.push({ letter: input.getAttribute('data-letter'), text: input.innerHTML.trim() }); }); if(options.length < 2) { customAlert("Wait", "Please fill out at least 2 options."); return; } const newQ = { id: "q_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5), text: text, options: options, correct: ans, tag: tag, rationale: rationale, imageUrl: imgUrl, rationaleImageUrl: rationaleImgUrl, linkGroup: linkGroup, displayItemNumber: 0 }; currentQuestions.push(newQ); updateItemNumbers(); saveToServer(() => { document.getElementById('addStatus').innerText = "Question added!"; document.getElementById('singleQTextEditor').innerHTML = ''; document.getElementById('singleRationaleEditor').innerHTML = ''; document.getElementById('singleImgUrl').value = ''; if(document.getElementById('singleRationaleImgUrl')) document.getElementById('singleRationaleImgUrl').value = ''; document.getElementById('singleLinkGroup').value = ''; document.querySelectorAll('.single-opt-input').forEach(i => i.innerHTML = ''); setTimeout(() => document.getElementById('addStatus').innerText = "", 3000); }); }
   function toggleBulkTutorial() { const el = document.getElementById('bulkTutorialContent'); const arrow = document.getElementById('bulkTutArrow'); if (el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▴'; } else { el.style.display = 'none'; arrow.innerText = '▾'; } }
 
   function toggleAiPromptSection() {
@@ -4319,6 +4581,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function parseAndAdd() {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
     const select = document.getElementById('addTagSelect');
     const tag = select.value === '__NEW__' ? document.getElementById('addTagNewInput').value.trim() : select.value;
     if(!tag) { customAlert("Wait", "Please provide a Tag/Group name."); return; }
@@ -4339,6 +4605,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   async function handleJsonImport(file) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -5099,6 +5369,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function setUserPermissionAction(targetUser, role) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      renderPermissionsTab();
+      return;
+    }
     showLoader(true);
     google.script.run.withSuccessHandler(res => {
       showLoader(false);
@@ -5115,6 +5390,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function removeUserFromRoomAction(targetUser) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
     const room = allRooms[currentRoomId];
     const isPrivate = room && room.privacy && room.privacy[targetUser.toLowerCase()] === true;
     const nameToDisplay = (isPrivate && targetUser.toLowerCase() !== currentUser.toLowerCase() && !isAdmin) ? "Private Member" : formatUsername(targetUser);
@@ -5137,6 +5416,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function addUserToRoomAction() {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
     const input = document.getElementById('addPermissionUsername');
     const targetUser = input.value.trim();
     if (!targetUser) {
@@ -5166,11 +5449,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   
   function handleProfileClick() {
     try {
-      if (currentUser === 'Guest' || !currentUser) {
-        openAuthModal();
-      } else {
-        openSettingsModal();
-      }
+      openAuthModal();
     } catch (err) {
       console.error("Error in handleProfileClick:", err);
       try {
@@ -5194,41 +5473,6 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const settingsMobile = document.getElementById('settingsMobileToggle');
       const mainMobile = document.getElementById('mobileViewToggle');
       if (settingsMobile && mainMobile) settingsMobile.checked = mainMobile.checked;
-      
-      const settingsAccount = document.getElementById('settingsAccountSection');
-      const settingsActions = document.getElementById('settingsActionsSection');
-      const settingsGuest = document.getElementById('settingsGuestPrompt');
-      const usernameInput = document.getElementById('settingsUsernameInput');
-      const emailInput = document.getElementById('settingsEmailInput');
-      const passwordInput = document.getElementById('settingsPasswordInput');
-      
-      if (currentUser === 'Guest' || !currentUser) {
-        if (settingsAccount) settingsAccount.style.display = 'none';
-        if (settingsActions) settingsActions.style.display = 'none';
-        if (settingsGuest) settingsGuest.style.display = 'block';
-      } else {
-        if (settingsAccount) settingsAccount.style.display = 'block';
-        if (settingsActions) settingsActions.style.display = 'flex';
-        if (settingsGuest) settingsGuest.style.display = 'none';
-        
-        if (usernameInput) usernameInput.value = currentUser;
-        if (passwordInput) passwordInput.value = '';
-        
-        const user = auth.currentUser;
-        if (user) {
-          if (emailInput) emailInput.value = user.email || '';
-          db.collection('users').doc(user.uid).get().then(doc => {
-            if (doc.exists) {
-              const privacyToggle = document.getElementById('settingsGlobalPrivacyToggle');
-              if (privacyToggle) privacyToggle.checked = !!doc.data().isGloballyPrivate;
-            }
-          }).catch(dbErr => {
-            console.warn("Could not retrieve global privacy setting:", dbErr);
-          });
-        } else {
-          if (emailInput) emailInput.value = '';
-        }
-      }
     } catch (err) {
       console.error("Error in openSettingsModal:", err);
       try {
