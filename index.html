@@ -249,7 +249,9 @@
     .quiz-controls { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; transition: 0.3s; } .stats-bar { display: flex; justify-content: space-between; align-items: center; background: var(--primary); color: white; padding: 14px 20px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; font-size: 15px; transition: background 0.3s; } .question-box { font-size: 17px; font-weight: 500; margin-bottom: 25px; line-height: 1.6; } .q-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);} .q-tag:hover { transform: translateY(-2px); box-shadow: 0 4px 10px color-mix(in srgb, var(--primary) 30%, transparent); }
     .option { display: flex; align-items: flex-start; background: var(--surface); margin: 12px 0; padding: 16px 20px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s ease; font-weight: 500; font-size: 15px; line-height: 1.5;} .option:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, transparent); } .option:has(input:checked) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); box-shadow: inset 0 0 0 1px var(--primary); } .option input { margin-right: 15px; margin-top: 3px; transform: scale(1.3); accent-color: var(--primary); cursor: pointer;}
     .feedback { margin-top: 25px; padding: 20px; border-radius: 8px; display: none; border: 1px solid transparent; } .feedback.correct { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); } .feedback.incorrect { background: rgba(225, 29, 72, 0.05); border-color: rgba(225, 29, 72, 0.3); } .feedback-title { font-weight: 800; font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; } .feedback.correct .feedback-title { color: var(--success); } .feedback.incorrect .feedback-title { color: var(--danger); } .feedback-rationale { font-size: 14px; background: var(--surface-alt); padding: 15px 18px; border-radius: 8px; margin-top: 15px; font-weight: 500; color: var(--text); line-height: 1.6; border: 1px solid var(--border); }
-    body.immersive-mode #globalHeaderBar, body.immersive-mode .global-header, body.immersive-mode .tabs, body.immersive-mode .quiz-controls { display: none !important; } #exitImmersiveBtn { display: none; margin-bottom: 20px; background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); } #exitImmersiveBtn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+    body.immersive-mode #globalHeaderBar, body.immersive-mode .global-header, body.immersive-mode .tabs, body.immersive-mode .quiz-controls, body.immersive-mode #quizTabsWrapper { display: none !important; } #exitImmersiveBtn { display: none; margin-bottom: 12px !important; background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); } #exitImmersiveBtn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+    body.immersive-mode #mainAppView > div:first-child { margin-bottom: 8px !important; }
+    body.immersive-mode .stats-bar { margin-bottom: 12px !important; }
     .bank-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px; transition: 0.3s; position: relative;} .bank-card.bulk-selected { border-color: var(--danger); background: rgba(225, 29, 72, 0.05); } .bank-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;} .bank-ans-box { background: var(--surface-alt); padding: 14px 18px; border-radius: 8px; margin-top: 15px; font-size: 14px; color: var(--text); border: 1px solid var(--border);} .bank-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; } .bank-actions input { text-align: center; padding: 6px; font-weight: bold; width: auto; }
     .bulk-checkbox { display: none; position: absolute; top: 20px; right: 20px; transform: scale(1.5); accent-color: var(--danger); cursor: pointer; z-index: 10;} #bulkActionBar { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--danger); z-index: 3000; align-items: center; gap: 20px;}
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 6000; font-weight: 800; font-size: 20px; color: white; backdrop-filter: blur(2px);} .custom-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 5000; backdrop-filter: blur(3px); overflow-y: auto !important; -webkit-overflow-scrolling: touch !important;} #authModalOverlay { z-index: 4000; background: var(--bg); align-items: center; } .custom-modal { background: var(--surface); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; max-height: 90vh; overflow-y: auto;}
@@ -629,12 +631,7 @@
       padding-bottom: 5px !important;
       -webkit-overflow-scrolling: touch !important;
     }
-    #quizTabs > *:first-child {
-      margin-left: 36px !important;
-    }
-    #quizTabs > *:last-child {
-      margin-right: 36px !important;
-    }
+
     .tabs-scroll-container::-webkit-scrollbar {
       display: none !important; /* Safari and Chrome */
     }
@@ -2543,14 +2540,18 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
       if (scrollLeft > 2) {
         leftArrow.style.display = 'inline-flex';
+        container.style.paddingLeft = '36px';
       } else {
         leftArrow.style.display = 'none';
+        container.style.paddingLeft = '0px';
       }
 
       if (scrollWidth > clientWidth && scrollLeft < maxScroll - 2) {
         rightArrow.style.display = 'inline-flex';
+        container.style.paddingRight = '36px';
       } else {
         rightArrow.style.display = 'none';
+        container.style.paddingRight = '0px';
       }
     }
 
@@ -4313,7 +4314,54 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     });
   }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
-  function populateTagFilters() { const filterQuiz = document.getElementById('tagFilter'); const filterBank = document.getElementById('bankTagFilter'); const currQuiz = filterQuiz.value; const currBank = filterBank.value; filterQuiz.innerHTML = '<option value="ALL">All Groups Combined</option>'; filterBank.innerHTML = '<option value="ALL">Filter: All Groups</option>'; const uniqueTags = [...new Set(currentQuestions.map(q => q.tag))].filter(Boolean); uniqueTags.forEach(tag => { filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`; filterBank.innerHTML += `<option value="${tag}">${tag}</option>`; }); if(uniqueTags.includes(currQuiz)) filterQuiz.value = currQuiz; if(uniqueTags.includes(currBank)) filterBank.value = currBank; }
+    function populateTagFilters() { 
+    const filterQuiz = document.getElementById('tagFilter'); 
+    const filterBank = document.getElementById('bankTagFilter'); 
+    if (!filterQuiz || !filterBank) return;
+    const currQuiz = filterQuiz.value; 
+    const currBank = filterBank.value; 
+    
+    filterQuiz.innerHTML = ''; 
+    filterBank.innerHTML = ''; 
+    
+    const subjectSelect = document.getElementById('subjectSelect');
+    const subject = subjectSelect ? subjectSelect.value : '';
+    const room = allRooms[currentRoomId];
+    let tagsOrder = [];
+    if (room && room.tagsOrder && subject && room.tagsOrder[subject]) {
+      tagsOrder = room.tagsOrder[subject];
+    }
+    
+    const uniqueTags = [...new Set(currentQuestions.map(q => q.tag && q.tag.trim() !== "" ? q.tag : "Untagged"))];
+    uniqueTags.sort((a, b) => {
+      let idxA = tagsOrder.indexOf(a);
+      let idxB = tagsOrder.indexOf(b);
+      if (idxA === -1) idxA = 999999;
+      if (idxB === -1) idxB = 999999;
+      if (idxA !== idxB) return idxA - idxB;
+      return a.localeCompare(b);
+    });
+    
+    uniqueTags.forEach(tag => {
+      filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`;
+      filterBank.innerHTML += `<option value="${tag}">${tag}</option>`;
+    });
+    
+    filterQuiz.innerHTML += '<option value="ALL">All Groups Combined</option>';
+    filterBank.innerHTML += '<option value="ALL">Filter: All Groups</option>';
+    
+    if (currQuiz && (uniqueTags.includes(currQuiz) || currQuiz === "ALL")) {
+      filterQuiz.value = currQuiz;
+    } else {
+      filterQuiz.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
+    }
+    
+    if (currBank && (uniqueTags.includes(currBank) || currBank === "ALL")) {
+      filterBank.value = currBank;
+    } else {
+      filterBank.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
+    }
+  }
   function saveToServer(callback) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
       showLoader(false);
@@ -4333,8 +4381,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const subject = document.getElementById('subjectSelect').value;
     let totalTimeAll = 0;
     let totalAttemptedAll = 0;
+    
+    // ONLY count keys that start with session mode! Exclude mistakes mode!
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith(`psych_state_${currentRoomId}_${subject}`)) {
+      if (key.startsWith(`psych_state_${currentRoomId}_${subject}_session`)) {
         try {
           const s = JSON.parse(localStorage.getItem(key));
           totalTimeAll += s.sessionTotalSeconds || 0;
@@ -4342,21 +4392,28 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         } catch(e) {}
       }
     });
+    
+    const activeMode = document.querySelector('input[name="mode"]:checked').value;
+    
     if (sessionAttempted === 0 && totalAttemptedAll === 0) {
       customAlert("Test Statistics", "You haven't answered any questions in this room yet. Start a session to track your speed!");
       return;
     }
-    const mode = document.querySelector('input[name="mode"]:checked').value;
+    
+    // Always use session (Study Mode) for stats calculations!
+    const statMode = "session";
     const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value;
     const currentTag = document.getElementById('tagFilter').value;
-    const pKey = `${mode}_${studyOrder}_${currentTag}`;
+    const pKey = `${statMode}_${studyOrder}_${currentTag}`;
+    
     let currentSpeedText = "N/A";
-    if (sessionAttempted > 0) {
+    if (sessionAttempted > 0 && activeMode === 'session') {
       let avg = Math.round(sessionTotalSeconds / sessionAttempted);
       let m = String(Math.floor(avg / 60)).padStart(2, '0');
       let s = String(avg % 60).padStart(2, '0');
       currentSpeedText = `${m}:${s} / q`;
     }
+    
     let globalSpeedText = "N/A";
     if (totalAttemptedAll > 0) {
       let avgAll = Math.round(totalTimeAll / totalAttemptedAll);
@@ -4364,38 +4421,56 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       let sall = String(avgAll % 60).padStart(2, '0');
       globalSpeedText = `${mall}:${sall} / q`;
     }
+    
     let activeScoreText = "N/A";
-    if (sessionAttempted > 0) {
+    if (sessionAttempted > 0 && activeMode === 'session') {
       let pct = Math.round((sessionScore / sessionAttempted) * 100);
       activeScoreText = `${sessionScore}/${sessionAttempted} (${pct}%)`;
     }
+    
     const userSubjectData = (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject]) ? seenQuestions[currentRoomId][subject] : {};
     const uniqueTags = [...new Set(currentQuestions.map(q => q.tag && q.tag.trim() !== "" ? q.tag : "Untagged"))];
+    
+    // Sort unique tags by room tagsOrder sequence!
+    const room = allRooms[currentRoomId];
+    let tagsOrder = [];
+    if (room && room.tagsOrder && room.tagsOrder[subject]) {
+      tagsOrder = room.tagsOrder[subject];
+    }
+    uniqueTags.sort((a, b) => {
+      let idxA = tagsOrder.indexOf(a);
+      let idxB = tagsOrder.indexOf(b);
+      if (idxA === -1) idxA = 999999;
+      if (idxB === -1) idxB = 999999;
+      if (idxA !== idxB) return idxA - idxB;
+      return a.localeCompare(b);
+    });
+    
     let tagStatsHTML = "";
     uniqueTags.forEach(tag => {
       const tagQuestions = currentQuestions.filter(q => (q.tag && q.tag.trim() !== "" ? q.tag : "Untagged") === tag);
       const totalTagQs = tagQuestions.length;
       let answeredTagQs = 0;
       let correctTagQs = 0;
-      const tKey = `${mode}_${studyOrder}_${tag}`;
-      const allKey = `${mode}_${studyOrder}_ALL`;
+      const tKey = `${statMode}_${studyOrder}_${tag}`;
+      
       tagQuestions.forEach(q => {
         let ans = null;
-        if (userSubjectData[pKey] && userSubjectData[pKey][q.id] !== undefined) {
-          ans = userSubjectData[pKey][q.id];
-        } else if (userSubjectData[tKey] && userSubjectData[tKey][q.id] !== undefined) {
-          ans = userSubjectData[tKey][q.id];
-        } else if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
-          ans = userSubjectData[allKey][q.id];
+        
+        // Dynamic isolation check:
+        if (currentTag === "ALL") {
+          // If we are looking at All Groups Combined view, ONLY show answers registered in All Groups Combined progress!
+          const allKey = `${statMode}_${studyOrder}_ALL`;
+          if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
+            ans = userSubjectData[allKey][q.id];
+          }
         } else {
-          Object.keys(userSubjectData).forEach(k => {
-            if (k !== 'bookmarks' && k !== 'mistakes' && typeof userSubjectData[k] === 'object' && userSubjectData[k] !== null) {
-              if (userSubjectData[k][q.id] !== undefined) {
-                ans = userSubjectData[k][q.id];
-              }
-            }
-          });
+          // If we are looking at a specific tag group, ONLY show answers registered in that specific tag group progress!
+          if (userSubjectData[tKey] && userSubjectData[tKey][q.id] !== undefined) {
+            ans = userSubjectData[tKey][q.id];
+          }
         }
+        
         if (ans !== null && ans !== undefined) {
           answeredTagQs++;
           if (ans === q.correct || ans === 'migrated') {
@@ -4644,6 +4719,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     if (mode !== 'session' && pendingQueue.length === 0) {
       buildQueue();
       if (mode === 'mistakes' && pendingQueue.length > 0) {
+        pendingQueue.forEach(id => {
+          delete endlessAnswers[id];
+        });
         for (let i = pendingQueue.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [pendingQueue[i], pendingQueue[j]] = [pendingQueue[j], pendingQueue[i]];
