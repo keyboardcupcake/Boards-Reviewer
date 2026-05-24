@@ -4711,36 +4711,16 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     
     const userSubjectData = (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject]) ? seenQuestions[currentRoomId][subject] : {};
     
-    // Upgraded progress helper that scans across all session keys to correctly capture answers from any tag!
-    const getQuestionAnswer = (q) => {
-      const tag = q.tag && q.tag.trim() !== "" ? q.tag : "Untagged";
-      const tKey = `${statMode}_${studyOrder}_${tag}`;
-      const allKey = `${statMode}_${studyOrder}_ALL`;
-      
-      if (userSubjectData[tKey] && userSubjectData[tKey][q.id] !== undefined) {
-        return userSubjectData[tKey][q.id];
-      }
-      if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
-        return userSubjectData[allKey][q.id];
-      }
-      for (let key in userSubjectData) {
-        if (key.startsWith(`${statMode}_`) && userSubjectData[key][q.id] !== undefined) {
-          return userSubjectData[key][q.id];
-        }
-      }
-      return undefined;
-    };
-    
     // Separate Progress Scoring for All Groups Combined!
     const totalAllQs = currentQuestions.length;
     let answeredAllQs = 0;
     let correctAllQs = 0;
+    const allKey = `${statMode}_${studyOrder}_ALL`;
     
     currentQuestions.forEach(q => {
-      const ans = getQuestionAnswer(q);
-      if (ans !== undefined) {
+      if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
         answeredAllQs++;
-        if (ans === q.correct || ans === 'migrated') {
+        if (userSubjectData[allKey][q.id] === q.correct || userSubjectData[allKey][q.id] === 'migrated') {
           correctAllQs++;
         }
       }
@@ -4792,12 +4772,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const totalTagQs = tagQuestions.length;
       let answeredTagQs = 0;
       let correctTagQs = 0;
+      const tKey = `${statMode}_${studyOrder}_${tag}`;
       
       tagQuestions.forEach(q => {
-        const ans = getQuestionAnswer(q);
-        if (ans !== undefined) {
+        if (userSubjectData[tKey] && userSubjectData[tKey][q.id] !== undefined) {
           answeredTagQs++;
-          if (ans === q.correct || ans === 'migrated') {
+          if (userSubjectData[tKey][q.id] === q.correct || userSubjectData[tKey][q.id] === 'migrated') {
             correctTagQs++;
           }
         }
