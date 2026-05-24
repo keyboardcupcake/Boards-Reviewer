@@ -1867,21 +1867,46 @@ const backend = {
     }
     
     try {
-      const userDoc = await db.collection('usernames').doc(lowerUser).get();
-      if (userDoc.exists) {
-        email = userDoc.data().email;
+      let email = username;
+      let userDoc = null;
+      let userDocExists = false;
+      let firestoreBlocked = false;
+      
+      if (lowerUser === 'admin') {
+        email = 'admin@boards-reviewer.com';
       } else if (username.includes('@')) {
         email = username;
+      } else {
+        try {
+          userDoc = await db.collection('usernames').doc(lowerUser).get();
+          if (userDoc && userDoc.exists) {
+            userDocExists = true;
+            email = userDoc.data().email;
+          }
+        } catch (firestoreErr) {
+          console.warn("Firestore username lookup failed:", firestoreErr);
+          firestoreBlocked = true;
+        }
+      }
+      
+      if (!email.includes('@')) {
+        if (firestoreBlocked) {
+          return { success: false, msg: "Firestore database permission error. Please log in using your registered email address (e.g. your@email.com) instead of your username!" };
+        } else {
+          return { success: false, msg: "Username not found. Please log in using your registered email address!" };
+        }
       }
       
       let matchedTemp = false;
       let oldUid = null;
-      if (userDoc.exists) {
+      if (userDocExists && userDoc) {
         oldUid = userDoc.data().uid;
-        const profileDoc = await db.collection('users').doc(oldUid).get();
-        if (profileDoc.exists && profileDoc.data().tempResetPassword === password) {
-          matchedTemp = true;
-        }
+        try {
+          const profileDoc = await db.collection('users').doc(oldUid).get();
+          if (profileDoc.exists && profileDoc.data() && profileDoc.data().tempResetPassword === password) {
+            matchedTemp = true;
+          }
+        } catch(e) {}
       }
       
       let user;
@@ -1893,7 +1918,7 @@ const backend = {
       }
       
       // Self-healing: if the User UID has changed (e.g. recreated in Auth), update Firestore!
-      if (userDoc.exists && userDoc.data().uid !== user.uid) {
+      if (userDocExists && userDoc && userDoc.data().uid !== user.uid) {
         console.warn("User UID mismatch detected. Automatically migrating Firestore documents to new UID:", user.uid);
         const oldUid = userDoc.data().uid;
         
@@ -1923,7 +1948,7 @@ const backend = {
       
       let profileDoc = await db.collection('users').doc(user.uid).get();
       if (!profileDoc.exists) {
-        const actualName = userDoc.exists ? userDoc.data().username : username;
+        const actualName = (userDocExists && userDoc) ? userDoc.data().username : username;
         await db.collection('users').doc(user.uid).set({
           username: actualName,
           email: email,
