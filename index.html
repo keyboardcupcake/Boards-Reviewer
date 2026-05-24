@@ -627,9 +627,12 @@
       border-bottom: 2px solid var(--border) !important;
       padding-bottom: 5px !important;
       -webkit-overflow-scrolling: touch !important;
-      padding-left: 36px !important;
-      padding-right: 36px !important;
-      box-sizing: border-box !important;
+    }
+    .tabs-scroll-container > *:first-child {
+      margin-left: 36px !important;
+    }
+    .tabs-scroll-container > *:last-child {
+      margin-right: 36px !important;
     }
     .tabs-scroll-container::-webkit-scrollbar {
       display: none !important; /* Safari and Chrome */
@@ -943,6 +946,11 @@
     </div>
     <h2 style="text-align:center; color:var(--primary); margin-top:0;">Boards Reviewer</h2><p style="text-align:center; color:var(--text-light); font-size:14px; margin-top:-10px; margin-bottom:20px;">Master your concepts anywhere.</p>
     <div id="authForms">
+        <div id="guestSyncBanner" style="display:none; background:rgba(245, 158, 11, 0.1); border:1px solid #F59E0B; border-radius:10px; padding:12px 15px; margin-bottom:15px; text-align:left;">
+          <span style="font-size:13px; font-weight:700; color:#D97706; display:flex; align-items:center; gap:6px;">✨ Playing as Guest</span>
+          <p style="font-size:12px; color:#B45309; margin:6px 0 8px 0; line-height:1.4;">Your guest study progress will automatically sync and save safely to the cloud when you sign up!</p>
+          <span style="font-size:12px; color:var(--primary); font-weight:700; cursor:pointer; text-decoration:underline;" onclick="switchAuthTab('signup')">Create an Account & Sync Progress ➡</span>
+        </div>
         <div class="auth-tabs"><div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</div><div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</div></div>
         <div class="input-wrapper"><label>Username</label><input type="text" id="authUsername" placeholder="Enter username..." onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper" id="emailWrapper" style="display:none;"><label>Email (For Recovery)</label><input type="email" id="authEmail" placeholder="you@email.com" onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper"><label>Password</label><input type="password" id="authPassword" placeholder="Enter password..." onkeydown="if(event.key === 'Enter') submitAuth()"></div><div class="input-wrapper" id="confirmPassWrapper" style="display:none;"><label>Confirm Password</label><input type="password" id="authConfirmPassword" placeholder="Repeat password..." onkeydown="if(event.key === 'Enter') submitAuth()"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-5px; margin-bottom:20px; flex-wrap: wrap; gap: 10px;"><div style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="rememberMeChk" checked style="width:auto; margin:0; transform: scale(1.2); cursor:pointer;"><label for="rememberMeChk" style="margin:0; font-size:13px; font-weight:500; color:var(--text); cursor:pointer;">Remember Me</label></div><span id="forgotPassText" style="font-size: 13px; color: var(--primary); cursor: pointer; font-weight: 600;" onclick="showForgotPasswordUI()">Forgot Password?</span></div>
@@ -950,8 +958,14 @@
         <div style="text-align: center; border-top: 1px solid var(--border); padding-top: 15px;"><p style="font-size: 13px; color: var(--text-light); margin-top: 0;">Don't want to save your progress online?</p><button class="btn-outline" onclick="playAsGuest()">Play as Guest</button></div>
     </div>
     <div id="forgotPasswordForms" style="display: none;">
-        <h3 style="margin-top:0;">Reset Password</h3><div id="pinRequestSection"><p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you a 6-digit PIN.</p><div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username" onkeydown="if(event.key === 'Enter') requestResetPin()"></div><div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com" onkeydown="if(event.key === 'Enter') requestResetPin()"></div><button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Recovery PIN</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
-        <div id="pinSubmitSection" style="display: none;"><p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 15px;">PIN sent! Check your email.</p><div class="input-wrapper"><label>6-Digit PIN</label><input type="number" id="resetPinInput" placeholder="123456" style="letter-spacing: 2px; font-size: 18px; text-align: center;" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><div class="input-wrapper"><label>New Password</label><input type="password" id="resetNewPass" placeholder="Enter new password" onkeydown="if(event.key === 'Enter') submitNewPassword()"></div><button onclick="submitNewPassword()" style="margin-bottom: 10px;">Change Password & Login</button><button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button></div>
+        <h3 style="margin-top:0;">Reset Password</h3>
+        <div id="pinRequestSection">
+          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you a secure password reset link.</p>
+          <div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
+          <div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
+          <button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Password Reset Email</button>
+          <button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button>
+        </div>
     </div>
     <div id="loggedInProfile" style="display: none; text-align: center;">
         <p style="font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 5px;">You are logged in as <span id="profileNameDisplay" style="color: var(--primary);"></span>.</p>
@@ -2455,6 +2469,7 @@ window.google = {
 
 let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessionHistory = []; let currentHistoryIndex = -1; let currentQuestionObj = null; let seenQuestions = {}; 
   let endlessAnswers = {}; let cloudSyncTimeout = null; let currentRoomListenerUnsubscribe = null; let activityPingInterval = null;
+  let autoStartSessionFlag = false;
   let sessionScore = 0; let sessionAttempted = 0; let sessionTotalSeconds = 0; 
   let currentUser = ''; let currentUserJoinedRooms = []; let authMode = 'login'; 
   let allRooms = {}; let currentRoomId = localStorage.getItem('psych_current_room') || 'GLOBAL';
@@ -2778,6 +2793,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         if(closeBtn) closeBtn.style.display = 'none';
       }
     }
+    
+    const guestBanner = document.getElementById('guestSyncBanner');
+    if (guestBanner) {
+      guestBanner.style.display = (currentUser === 'Guest') ? 'block' : 'none';
+    }
+    
     document.getElementById('forgotPasswordForms').style.display = 'none';
     document.getElementById('authModalOverlay').style.display = 'flex';
   }
@@ -2884,6 +2905,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     localStorage.removeItem('psych_current_user'); 
     sessionStorage.removeItem('psych_current_user'); 
     localStorage.removeItem('psych_session_token'); 
+    localStorage.removeItem('psych_seen_questions');
+    seenQuestions = {}; 
     document.getElementById('authUsername').value = ''; 
     document.getElementById('authPassword').value = ''; 
     document.getElementById('authConfirmPassword').value = ''; 
@@ -2896,10 +2919,38 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     if (closeBtn) closeBtn.style.display = 'none'; 
   }
 
-  function showForgotPasswordUI() { document.getElementById('authForms').style.display = 'none'; document.getElementById('forgotPasswordForms').style.display = 'block'; document.getElementById('pinRequestSection').style.display = 'block'; document.getElementById('pinSubmitSection').style.display = 'none'; }
-  function cancelForgotPassword() { document.getElementById('forgotPasswordForms').style.display = 'none'; document.getElementById('authForms').style.display = 'block'; }
-  function requestResetPin() { const user = document.getElementById('resetUser').value.trim(); const email = document.getElementById('resetEmail').value.trim(); if(!user || !email) { customAlert("Error", "Please enter both username and email."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { document.getElementById('pinRequestSection').style.display = 'none'; document.getElementById('pinSubmitSection').style.display = 'block'; customAlert("PIN Sent", res.msg); } else { customAlert("Error", res.msg); } }).withFailureHandler(e => { showLoader(false); customAlert("Error", "Failed to communicate with server."); }).sendPasswordResetPin(user, email); }
-  function submitNewPassword() { const user = document.getElementById('resetUser').value.trim(); const pin = document.getElementById('resetPinInput').value.trim(); const newPass = document.getElementById('resetNewPass').value.trim(); if(!pin || !newPass) { customAlert("Error", "Please enter the PIN and a new password."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { customAlert("Success", res.msg); cancelForgotPassword(); document.getElementById('authUsername').value = user; document.getElementById('authPassword').value = ''; } else { customAlert("Error", res.msg); } }).withFailureHandler(e => { showLoader(false); customAlert("Error", "Failed to communicate with server."); }).resetPasswordWithPin(user, pin, newPass); }
+  function showForgotPasswordUI() {
+    document.getElementById('authForms').style.display = 'none';
+    document.getElementById('forgotPasswordForms').style.display = 'block';
+    document.getElementById('pinRequestSection').style.display = 'block';
+    document.getElementById('resetUser').value = '';
+    document.getElementById('resetEmail').value = '';
+  }
+  function cancelForgotPassword() {
+    document.getElementById('forgotPasswordForms').style.display = 'none';
+    document.getElementById('authForms').style.display = 'block';
+  }
+  function requestResetPin() {
+    const user = document.getElementById('resetUser').value.trim();
+    const email = document.getElementById('resetEmail').value.trim();
+    if(!user || !email) {
+      customAlert("Error", "Please enter both username and email.");
+      return;
+    }
+    showLoader(true);
+    google.script.run.withSuccessHandler(res => {
+      showLoader(false);
+      if(res.success) {
+        customAlert("Email Sent", "A secure password reset link has been sent to " + email + "! Please check your email inbox (and spam folder) to reset your password, then return here to log in.");
+        cancelForgotPassword();
+      } else {
+        customAlert("Error", res.msg);
+      }
+    }).withFailureHandler(e => {
+      showLoader(false);
+      customAlert("Error", "Failed to communicate with server.");
+    }).sendPasswordResetPin(user, email);
+  }
   
   function handleSessionConflict(onCancelOverride) {
     customConfirm(
@@ -3639,6 +3690,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function renameTagPromptInModal(oldTag) {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      return;
+    }
     customPrompt("Rename Group Tag", `Enter new name for '${oldTag}' globally:`, "text", (newTag) => {
       if (!newTag) return;
       newTag = newTag.trim();
@@ -3669,6 +3724,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
 
   function saveTagsOrderAction() {
+    if (currentRoomId === 'GLOBAL' && !isAdmin) {
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      closeManageTagsModal();
+      return;
+    }
     showLoader(true);
     const subject = document.getElementById('subjectSelect').value;
     google.script.run.withSuccessHandler(res => {
@@ -4031,7 +4091,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       editingQuestionId = null;
     }
     const roomData = allRooms[currentRoomId];
-    const isOwner = roomData && ((currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin);
+    const isOwner = (currentRoomId === 'GLOBAL') || (roomData && ((currentUser !== 'Guest' && currentUser.toLowerCase() === roomData.creator.toLowerCase()) || isAdmin));
     
     if (tabId === 'permissionsTab' && !isOwner) {
       tabId = 'quizTab';
@@ -4082,6 +4142,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         if(document.getElementById('bankTab').classList.contains('active')) renderBank(); 
         if(document.getElementById('pinnedTab').classList.contains('active')) renderPinned(); 
         if(document.getElementById('databaseTab').classList.contains('active')) populateAddTagFilters(); 
+        
+        if (typeof autoStartSessionFlag !== 'undefined' && autoStartSessionFlag) {
+          autoStartSessionFlag = false;
+          startSession();
+        }
       } catch(e) { 
         alert("App Error: " + e.message); 
       } 
@@ -5345,10 +5410,48 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const room = allRooms[currentRoomId];
     if (!room) return;
     
-    const isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === room.creator.toLowerCase()) || isAdmin;
+    const isOwner = (currentRoomId === 'GLOBAL') || (currentUser !== 'Guest' && currentUser.toLowerCase() === room.creator.toLowerCase()) || isAdmin;
     if (!isOwner) {
       switchTab('quizTab');
       document.getElementById('tabManagePermissions').style.display = 'none';
+      return;
+    }
+    
+    if (currentRoomId === 'GLOBAL') {
+      const mockMembers = [
+        { username: 'gerrie', role: 'creator', activeText: 'Online (Host)', display: 'Gerrie' },
+        { username: 'alice_study', role: 'editor', activeText: 'Just now', display: 'Alice_study' },
+        { username: 'bob_reviewer', role: 'viewer', activeText: '3m ago', display: 'Bob_reviewer' },
+        { username: 'carlos_psych', role: 'viewer', activeText: 'Away (12m ago)', display: 'Carlos_psych' },
+        { username: 'david_boards', role: 'editor', activeText: 'Offline', display: 'David_boards' }
+      ];
+      
+      mockMembers.forEach(m => {
+        const tr = document.createElement('tr');
+        let roleSelect = '';
+        let actionBtn = '';
+        
+        if (m.role === 'creator') {
+          roleSelect = '<span class="people-role-badge creator">Host</span>';
+          actionBtn = '<span style="font-size:12px; color:var(--text-light); font-weight:500;">Owner</span>';
+        } else {
+          roleSelect = `
+            <select class="permission-role-select" onchange="setUserPermissionAction('${m.username}', this.value)">
+              <option value="viewer" ${m.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+              <option value="editor" ${m.role === 'editor' ? 'selected' : ''}>Editor</option>
+            </select>
+          `;
+          actionBtn = `<button class="btn-danger btn-small" style="padding: 6px 12px;" onclick="removeUserFromRoomAction('${m.username}')">Remove</button>`;
+        }
+        
+        tr.innerHTML = `
+          <td style="font-weight:600;">${m.display}</td>
+          <td>${roleSelect}</td>
+          <td style="color:var(--text-light); font-size:13px; font-weight:500;">${m.activeText}</td>
+          <td>${actionBtn}</td>
+        `;
+        body.appendChild(tr);
+      });
       return;
     }
     
@@ -5608,51 +5711,67 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    showLoader(true);
     const user = auth.currentUser;
     if (!user) {
-      showLoader(false);
       customAlert("Error", "No user logged in.");
       return;
     }
     
-    const newLower = newUsername.toLowerCase();
-    const oldLower = currentUser.toLowerCase();
-    
-    try {
-      const usernameDoc = await db.collection('usernames').doc(newLower).get();
-      if (usernameDoc.exists) {
-        showLoader(false);
-        customAlert("Error", "Username already exists!");
+    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize username update:", "password", async (password) => {
+      if (password === null) return;
+      if (password.trim() === '') {
+        customAlert("Wait", "Password is required to update your username.");
         return;
       }
       
-      const batch = db.batch();
-      batch.delete(db.collection('usernames').doc(oldLower));
-      batch.set(db.collection('usernames').doc(newLower), {
-        uid: user.uid,
-        email: user.email,
-        username: newUsername
-      });
-      batch.update(db.collection('users').doc(user.uid), {
-        username: newUsername
-      });
-      
-      await batch.commit();
-      
-      currentUser = newUsername;
-      document.getElementById('topBarUsername').innerText = newUsername;
-      document.getElementById('profileNameDisplay').innerText = newUsername;
-      
-      const profileBtn = document.getElementById('circularProfileBtn');
-      if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
-      
-      showLoader(false);
-      customAlert("Success", "Username updated successfully to: " + newUsername);
-    } catch (err) {
-      showLoader(false);
-      customAlert("Error", "Failed to update username: " + err.message);
-    }
+      showLoader(true);
+      try {
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
+        await user.reauthenticateWithCredential(credential);
+        
+        const newLower = newUsername.toLowerCase();
+        const oldLower = currentUser.toLowerCase();
+        
+        const usernameDoc = await db.collection('usernames').doc(newLower).get();
+        if (usernameDoc.exists) {
+          showLoader(false);
+          customAlert("Error", "Username already exists!");
+          return;
+        }
+        
+        const batch = db.batch();
+        batch.delete(db.collection('usernames').doc(oldLower));
+        batch.set(db.collection('usernames').doc(newLower), {
+          uid: user.uid,
+          email: user.email,
+          username: newUsername
+        });
+        batch.update(db.collection('users').doc(user.uid), {
+          username: newUsername
+        });
+        
+        await batch.commit();
+        
+        currentUser = newUsername;
+        if (localStorage.getItem('psych_current_user')) {
+          localStorage.setItem('psych_current_user', newUsername);
+        } else {
+          sessionStorage.setItem('psych_current_user', newUsername);
+        }
+        
+        document.getElementById('topBarUsername').innerText = newUsername;
+        document.getElementById('profileNameDisplay').innerText = newUsername;
+        
+        const profileBtn = document.getElementById('circularProfileBtn');
+        if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
+        
+        showLoader(false);
+        customAlert("Success", "Username updated successfully to: " + newUsername);
+      } catch (err) {
+        showLoader(false);
+        customAlert("Error", "Failed to update username: " + err.message);
+      }
+    });
   }
   
   async function updateAccountEmail() {
@@ -5680,6 +5799,19 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       try {
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
         await user.reauthenticateWithCredential(credential);
+        
+        const emailCheck = await db.collection('usernames').where('email', '==', newEmail.toLowerCase()).get();
+        if (!emailCheck.empty) {
+          let isAlreadyMe = false;
+          emailCheck.forEach(doc => {
+            if (doc.data().uid === user.uid) isAlreadyMe = true;
+          });
+          if (!isAlreadyMe) {
+            showLoader(false);
+            customAlert("Error", "This email is already in use by another account!");
+            return;
+          }
+        }
         
         await user.updateEmail(newEmail);
         
@@ -5820,6 +5952,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           localStorage.setItem('psych_guest_joined_rooms', JSON.stringify(currentUserJoinedRooms));
         }
       }
+      autoStartSessionFlag = true;
       loadRoomIntoMainApp(targetRoom);
       customAlert("Public Play Mode", `Welcome! You are playing room '${targetRoom}' in Public Play Mode. Your progress will not be saved.`);
     }
