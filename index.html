@@ -619,7 +619,7 @@
     }
     .tabs-scroll-container {
       display: flex !important;
-      justify-content: flex-start !important;
+      justify-content: flex-start;
       overflow-x: auto !important;
       scroll-behavior: smooth !important;
       width: 100% !important;
@@ -996,10 +996,11 @@
               </div>
             </div>
             
-            <div class="input-wrapper" style="margin-bottom:0;">
-              <label style="font-size:11px;">Update Password</label>
+            <div class="input-wrapper" style="margin-bottom:0; display:flex; flex-direction:column; gap:8px;">
+              <label style="font-size:11px; margin:0;">Update Password</label>
+              <input type="password" id="settingsPasswordInput" placeholder="New password..." style="padding:8px 12px; font-size:14px; margin:0;">
               <div style="display:flex; gap:8px;">
-                <input type="password" id="settingsPasswordInput" placeholder="New password..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
+                <input type="password" id="settingsPasswordConfirmInput" placeholder="Retype new password..." style="flex:1; padding:8px 12px; font-size:14px; margin:0;">
                 <button class="btn-outline btn-small" onclick="updateAccountPassword()" style="padding:0 12px; font-size:13px; font-weight:bold; white-space:nowrap; width:auto; height:38px; border-radius:6px;">Update</button>
               </div>
             </div>
@@ -1084,6 +1085,26 @@
           <span style="font-size:11px; color:var(--text-light);">Members can generate invite & play links</span>
         </div>
         <label class="switch"><input type="checkbox" id="shareViewerToggle" onchange="toggleRoomViewerShareSettings()"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="otpModalOverlay" class="custom-modal-overlay" style="align-items: flex-start; padding-top: 80px; display: none; z-index: 6000;">
+  <div class="custom-modal" style="text-align: left; box-shadow: 0 20px 40px rgba(0,0,0,0.15); width: 100%; max-width: 400px; padding: 25px 30px; border-radius: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+      <h3 style="margin:0; color:var(--primary); font-size: 20px; font-weight:800; display:flex; align-items:center; gap:8px;">✉️ Enter Verification OTP</h3>
+      <button class="btn-outline btn-small" style="border:none; padding:4px; font-size:16px; background:transparent;" onclick="closeOtpModal()">✖</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:15px;">
+      <p style="margin:0; font-size:13px; color:var(--text-light); line-height:1.5;">We have sent a 6-digit OTP verification code to <b id="otpTargetDisplay" style="color:var(--text);">...</b>. Please enter the code below to authorize and automatically process this account update.</p>
+      <div>
+        <label style="font-weight:700; font-size:13px; margin-bottom:6px; color:var(--text);">Verification Code</label>
+        <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align:center; letter-spacing:8px; font-size:24px; font-weight:bold; padding:10px; border-radius:8px; background:var(--surface-alt); border:1px solid var(--border); width:100%;">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:5px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeOtpModal()">Cancel</button>
+        <button class="btn-success" style="flex:2; font-weight:bold;" onclick="verifyOtpAndUpdate()">Verify & Update</button>
       </div>
     </div>
   </div>
@@ -1448,6 +1469,14 @@ Here are my questions to format:
       customAlert("Database/Network Error 🌐", `A background operation failed: <b>${e.reason ? e.reason.message || e.reason : 'Unknown Error'}</b>`);
     } catch (alertErr) {
       alert("Operation Error: " + (e.reason ? e.reason.message || e.reason : 'Unknown Error'));
+    }
+  });
+
+  // Swallows harmless ResizeObserver loop notifications to prevent debug warning overlays on mobile!
+  window.addEventListener('error', (e) => {
+    if (e.message && (e.message.includes('ResizeObserver loop') || e.message.includes('ResizeObserver loop completed'))) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
     }
   });
 
@@ -2439,6 +2468,12 @@ const backend = {
     
     const roomsData = await this.getRoomsData(username, sessionToken);
     return { success: true, msg: "Privacy updated.", rooms: roomsData };
+  },
+
+  async sendOtpEmail(email, otp, actionType, targetValue) {
+    console.log(`[OTP Simulated Send] To: ${email} | Type: ${actionType} | Target: ${targetValue} | OTP Code: ${otp}`);
+    customAlert("OTP Sent (Simulator)", `A verification OTP code <b>${otp}</b> was sent to <b>${email}</b>.`);
+    return { success: true };
   }
 };
 
@@ -2537,6 +2572,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const scrollWidth = container.scrollWidth;
       const clientWidth = container.clientWidth;
       const maxScroll = scrollWidth - clientWidth;
+
+      if (scrollWidth <= clientWidth) {
+        container.style.justifyContent = 'center';
+      } else {
+        container.style.justifyContent = 'flex-start';
+      }
 
       if (scrollLeft > 2) {
         leftArrow.style.display = 'inline-flex';
@@ -2658,6 +2699,26 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
                 seenQuestions = res.progress || {}; 
                 currentUserJoinedRooms = res.joinedRooms || []; 
                 localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions)); 
+                
+                // Clear any cached local active session states if they were wiped on the server!
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('psych_state_')) {
+                    const parts = key.split('_');
+                    if (parts.length >= 5) {
+                      const rId = parts[2];
+                      const subject = parts[3];
+                      const pKey = parts.slice(4).join('_');
+                      
+                      const serverRoomProg = seenQuestions[rId] || {};
+                      const serverSubjProg = serverRoomProg[subject] || {};
+                      // If the server progress for this pKey is empty or missing, wipe the client active session state!
+                      if (!serverSubjProg[rId] && (!serverSubjProg[pKey] || Object.keys(serverSubjProg[pKey]).length === 0)) {
+                        localStorage.removeItem(key);
+                      }
+                    }
+                  }
+                });
+                
                 finalizeDashboardLoad();
               } else if (res.reason === "session_conflict") {
                 handleSessionConflict(() => {
@@ -3832,6 +3893,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       if (res.success) {
         allRooms = res.rooms;
         updateItemNumbers();
+        populateTagFilters();
         renderBank();
         closeManageTagsModal();
         customAlert("Success", "Tags order saved successfully!");
@@ -4314,52 +4376,56 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     });
   }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
-    function populateTagFilters() { 
-    const filterQuiz = document.getElementById('tagFilter'); 
-    const filterBank = document.getElementById('bankTagFilter'); 
-    if (!filterQuiz || !filterBank) return;
-    const currQuiz = filterQuiz.value; 
-    const currBank = filterBank.value; 
-    
-    filterQuiz.innerHTML = ''; 
-    filterBank.innerHTML = ''; 
-    
-    const subjectSelect = document.getElementById('subjectSelect');
-    const subject = subjectSelect ? subjectSelect.value : '';
-    const room = allRooms[currentRoomId];
-    let tagsOrder = [];
-    if (room && room.tagsOrder && subject && room.tagsOrder[subject]) {
-      tagsOrder = room.tagsOrder[subject];
-    }
-    
-    const uniqueTags = [...new Set(currentQuestions.map(q => q.tag && q.tag.trim() !== "" ? q.tag : "Untagged"))];
-    uniqueTags.sort((a, b) => {
-      let idxA = tagsOrder.indexOf(a);
-      let idxB = tagsOrder.indexOf(b);
-      if (idxA === -1) idxA = 999999;
-      if (idxB === -1) idxB = 999999;
-      if (idxA !== idxB) return idxA - idxB;
-      return a.localeCompare(b);
-    });
-    
-    uniqueTags.forEach(tag => {
-      filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`;
-      filterBank.innerHTML += `<option value="${tag}">${tag}</option>`;
-    });
-    
-    filterQuiz.innerHTML += '<option value="ALL">All Groups Combined</option>';
-    filterBank.innerHTML += '<option value="ALL">Filter: All Groups</option>';
-    
-    if (currQuiz && (uniqueTags.includes(currQuiz) || currQuiz === "ALL")) {
-      filterQuiz.value = currQuiz;
-    } else {
-      filterQuiz.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
-    }
-    
-    if (currBank && (uniqueTags.includes(currBank) || currBank === "ALL")) {
-      filterBank.value = currBank;
-    } else {
-      filterBank.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
+  function populateTagFilters() { 
+    try {
+      const filterQuiz = document.getElementById('tagFilter'); 
+      const filterBank = document.getElementById('bankTagFilter'); 
+      if (!filterQuiz || !filterBank) return;
+      const currQuiz = filterQuiz.value; 
+      const currBank = filterBank.value; 
+      
+      filterQuiz.innerHTML = ''; 
+      filterBank.innerHTML = ''; 
+      
+      const subjectSelect = document.getElementById('subjectSelect');
+      const subject = subjectSelect ? subjectSelect.value : '';
+      const room = (allRooms && currentRoomId) ? allRooms[currentRoomId] : null;
+      let tagsOrder = [];
+      if (room && room.tagsOrder && subject && room.tagsOrder[subject]) {
+        tagsOrder = room.tagsOrder[subject];
+      }
+      
+      const uniqueTags = [...new Set(currentQuestions.map(q => q.tag && q.tag.trim() !== "" ? q.tag : "Untagged"))];
+      uniqueTags.sort((a, b) => {
+        let idxA = tagsOrder.indexOf(a);
+        let idxB = tagsOrder.indexOf(b);
+        if (idxA === -1) idxA = 999999;
+        if (idxB === -1) idxB = 999999;
+        if (idxA !== idxB) return idxA - idxB;
+        return a.localeCompare(b);
+      });
+      
+      uniqueTags.forEach(tag => {
+        filterQuiz.innerHTML += `<option value="${tag}">${tag}</option>`;
+        filterBank.innerHTML += `<option value="${tag}">${tag}</option>`;
+      });
+      
+      filterQuiz.innerHTML += '<option value="ALL">All Groups Combined</option>';
+      filterBank.innerHTML += '<option value="ALL">Filter: All Groups</option>';
+      
+      if (currQuiz && currQuiz !== "ALL" && uniqueTags.includes(currQuiz)) {
+        filterQuiz.value = currQuiz;
+      } else {
+        filterQuiz.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
+      }
+      
+      if (currBank && currBank !== "ALL" && uniqueTags.includes(currBank)) {
+        filterBank.value = currBank;
+      } else {
+        filterBank.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
+      }
+    } catch (err) {
+      console.error("Error in populateTagFilters:", err);
     }
   }
   function saveToServer(callback) {
@@ -4400,11 +4466,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    // Always use session (Study Mode) for stats calculations!
     const statMode = "session";
     const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value;
     const currentTag = document.getElementById('tagFilter').value;
-    const pKey = `${statMode}_${studyOrder}_${currentTag}`;
     
     let currentSpeedText = "N/A";
     if (sessionAttempted > 0 && activeMode === 'session') {
@@ -4429,9 +4493,48 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
     
     const userSubjectData = (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject]) ? seenQuestions[currentRoomId][subject] : {};
+    
+    // Separate Progress Scoring for All Groups Combined!
+    const totalAllQs = currentQuestions.length;
+    let answeredAllQs = 0;
+    let correctAllQs = 0;
+    const allKey = `${statMode}_${studyOrder}_ALL`;
+    
+    currentQuestions.forEach(q => {
+      if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
+        answeredAllQs++;
+        if (userSubjectData[allKey][q.id] === q.correct || userSubjectData[allKey][q.id] === 'migrated') {
+          correctAllQs++;
+        }
+      }
+    });
+    
+    const pctAnsweredAll = totalAllQs > 0 ? Math.round((answeredAllQs / totalAllQs) * 100) : 0;
+    const pctCorrectAll = answeredAllQs > 0 ? Math.round((correctAllQs / answeredAllQs) * 100) : 0;
+    
+    const allGroupsStatsHTML = `
+      <div style="margin-bottom: 12px; background: rgba(var(--primary-rgb, 225, 29, 72), 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--primary);">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: var(--primary); margin-bottom: 6px;">
+          <span>🌐 All Groups Combined</span>
+          <span style="font-size: 12px; color: var(--text-light);">${answeredAllQs} / ${totalAllQs} Answered</span>
+        </div>
+        <div style="background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 8px; width: 100%;">
+          <div style="background: var(--primary); width: ${pctAnsweredAll}%; height: 100%; border-radius: 6px; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light);">
+          <span>Answered: ${pctAnsweredAll}%</span>
+          <span>Accuracy: ${pctCorrectAll}% (${correctAllQs} correct)</span>
+        </div>
+        ${answeredAllQs > 0 ? `
+        <div style="background: var(--border); border-radius: 4px; height: 4px; overflow: hidden; margin-top: 6px; width: 100%;">
+          <div style="background: var(--success); width: ${pctCorrectAll}%; height: 100%; border-radius: 4px; transition: width 0.3s ease;"></div>
+        </div>
+        ` : ''}
+      </div>
+    `;
+    
     const uniqueTags = [...new Set(currentQuestions.map(q => q.tag && q.tag.trim() !== "" ? q.tag : "Untagged"))];
     
-    // Sort unique tags by room tagsOrder sequence!
     const room = allRooms[currentRoomId];
     let tagsOrder = [];
     if (room && room.tagsOrder && room.tagsOrder[subject]) {
@@ -4457,15 +4560,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       tagQuestions.forEach(q => {
         let ans = null;
         
-        // Dynamic isolation check:
         if (currentTag === "ALL") {
-          // If we are looking at All Groups Combined view, ONLY show answers registered in All Groups Combined progress!
           const allKey = `${statMode}_${studyOrder}_ALL`;
           if (userSubjectData[allKey] && userSubjectData[allKey][q.id] !== undefined) {
             ans = userSubjectData[allKey][q.id];
           }
         } else {
-          // If we are looking at a specific tag group, ONLY show answers registered in that specific tag group progress!
           if (userSubjectData[tKey] && userSubjectData[tKey][q.id] !== undefined) {
             ans = userSubjectData[tKey][q.id];
           }
@@ -4501,11 +4601,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         </div>
       `;
     });
-    if (tagStatsHTML === "") {
-      tagStatsHTML = `<p style="text-align: center; color: var(--text-light); font-size: 13px;">No tag progress available.</p>`;
-    }
+    
+    // Combined list: "All Groups Combined" progress card sits proudly at the absolute top!
+    const finalStatsListHTML = allGroupsStatsHTML + tagStatsHTML;
+    
     const modalHTML = `
-      <div style="max-height: 400px; overflow-y: auto; padding-right: 8px; font-family: system-ui, -apple-system, sans-serif;">
+      <div style="max-height: 420px; overflow-y: auto; padding-right: 8px; font-family: system-ui, -apple-system, sans-serif;">
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
           <div style="background: var(--surface-alt); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
             <div style="font-size: 10px; font-weight: bold; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">⏱️ Session Speed</div>
@@ -5852,6 +5953,124 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const picker = document.getElementById('modernColorPickerCard');
     if (picker) picker.style.display = 'none';
   }
+
+  let tempOtpRequest = null;
+
+  function closeOtpModal() {
+    document.getElementById('otpModalOverlay').style.display = 'none';
+    tempOtpRequest = null;
+  }
+
+  function openOtpModal(email, actionType, targetValue, otpCode, reauthCredential) {
+    document.getElementById('otpTargetDisplay').innerText = email;
+    document.getElementById('otpCodeInput').value = '';
+    tempOtpRequest = {
+      email: email,
+      actionType: actionType,
+      targetValue: targetValue,
+      otpCode: otpCode,
+      reauthCredential: reauthCredential
+    };
+    document.getElementById('otpModalOverlay').style.display = 'flex';
+    customAlert("Verification Code Sent", "A 6-digit OTP code has been sent to " + email + ". Please check your inbox and enter it to verify ownership.");
+  }
+
+  async function verifyOtpAndUpdate() {
+    const inputCode = document.getElementById('otpCodeInput').value.trim();
+    if (!tempOtpRequest) {
+      customAlert("Error", "No active verification request found.");
+      return;
+    }
+    if (inputCode.length !== 6 || isNaN(inputCode)) {
+      customAlert("Wait", "Please enter a valid 6-digit numeric OTP code.");
+      return;
+    }
+    if (inputCode !== tempOtpRequest.otpCode) {
+      customAlert("Invalid Code", "The OTP code you entered is incorrect. Please check your email and try again.");
+      return;
+    }
+
+    showLoader(true);
+    const user = auth.currentUser;
+    if (!user) {
+      showLoader(false);
+      customAlert("Error", "No user logged in.");
+      closeOtpModal();
+      return;
+    }
+
+    try {
+      if (tempOtpRequest.reauthCredential) {
+        await user.reauthenticateWithCredential(tempOtpRequest.reauthCredential);
+      }
+
+      if (tempOtpRequest.actionType === 'Username') {
+        const newUsername = tempOtpRequest.targetValue;
+        const newLower = newUsername.toLowerCase();
+        const oldLower = currentUser.toLowerCase();
+
+        const batch = db.batch();
+        batch.delete(db.collection('usernames').doc(oldLower));
+        batch.set(db.collection('usernames').doc(newLower), {
+          uid: user.uid,
+          email: user.email,
+          username: newUsername
+        });
+        batch.update(db.collection('users').doc(user.uid), {
+          username: newUsername
+        });
+        
+        await batch.commit();
+        
+        currentUser = newUsername;
+        if (localStorage.getItem('psych_current_user')) {
+          localStorage.setItem('psych_current_user', newUsername);
+        } else {
+          sessionStorage.setItem('psych_current_user', newUsername);
+        }
+        
+        document.getElementById('topBarUsername').innerText = newUsername;
+        document.getElementById('profileNameDisplay').innerText = newUsername;
+        const profileBtn = document.getElementById('circularProfileBtn');
+        if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
+
+        document.getElementById('settingsUsernameInput').value = '';
+        showLoader(false);
+        customAlert("Success", "Username updated successfully to: " + newUsername);
+
+      } else if (tempOtpRequest.actionType === 'Email') {
+        const newEmail = tempOtpRequest.targetValue;
+        await user.updateEmail(newEmail);
+
+        const batch = db.batch();
+        batch.update(db.collection('users').doc(user.uid), {
+          email: newEmail
+        });
+        batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
+          email: newEmail
+        });
+        await batch.commit();
+
+        document.getElementById('settingsEmailInput').value = '';
+        showLoader(false);
+        customAlert("Success", "Email updated successfully to: " + newEmail);
+
+      } else if (tempOtpRequest.actionType === 'Password') {
+        const newPassword = tempOtpRequest.targetValue;
+        await user.updatePassword(newPassword);
+        
+        document.getElementById('settingsPasswordInput').value = '';
+        document.getElementById('settingsPasswordConfirmInput').value = '';
+        showLoader(false);
+        customAlert("Success", "Password updated successfully!");
+      }
+
+      closeOtpModal();
+    } catch (err) {
+      showLoader(false);
+      customAlert("Update Failed", "Verification succeeded but failed to update: " + err.message);
+    }
+  }
   
   function toggleSettingsDarkMode() {
     const mainToggle = document.getElementById('darkModeToggle');
@@ -5944,53 +6163,37 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         await user.reauthenticateWithCredential(credential);
         
         const newLower = newUsername.toLowerCase();
-        const oldLower = currentUser.toLowerCase();
-        
         const usernameDoc = await db.collection('usernames').doc(newLower).get();
         if (usernameDoc.exists) {
           showLoader(false);
           customAlert("Error", "Username already exists!");
           return;
         }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        const batch = db.batch();
-        batch.delete(db.collection('usernames').doc(oldLower));
-        batch.set(db.collection('usernames').doc(newLower), {
-          uid: user.uid,
-          email: user.email,
-          username: newUsername
-        });
-        batch.update(db.collection('users').doc(user.uid), {
-          username: newUsername
-        });
+        google.script.run.withSuccessHandler(res => {
+          showLoader(false);
+          if (res.success) {
+            openOtpModal(user.email, 'Username', newUsername, otp, credential);
+          } else {
+            customAlert("Verification Error", "Failed to send verification OTP: " + res.msg);
+          }
+        }).withFailureHandler(err => {
+          showLoader(false);
+          customAlert("Server Error", "Failed to connect to verification server: " + err.message);
+        }).sendOtpEmail(user.email, otp, 'Username', newUsername);
         
-        await batch.commit();
-        
-        currentUser = newUsername;
-        if (localStorage.getItem('psych_current_user')) {
-          localStorage.setItem('psych_current_user', newUsername);
-        } else {
-          sessionStorage.setItem('psych_current_user', newUsername);
-        }
-        
-        document.getElementById('topBarUsername').innerText = newUsername;
-        document.getElementById('profileNameDisplay').innerText = newUsername;
-        
-        const profileBtn = document.getElementById('circularProfileBtn');
-        if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
-        
-        showLoader(false);
-        customAlert("Success", "Username updated successfully to: " + newUsername);
       } catch (err) {
         showLoader(false);
-        customAlert("Error", "Failed to update username: " + err.message);
+        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
       }
     });
   }
   
   async function updateAccountEmail() {
     const input = document.getElementById('settingsEmailInput');
-    const newEmail = input.value.trim();
+    const newEmail = input.value.trim().toLowerCase();
     if (!newEmail) {
       customAlert("Wait", "Email cannot be empty.");
       return;
@@ -5999,6 +6202,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const user = auth.currentUser;
     if (!user) {
       customAlert("Error", "No user logged in.");
+      return;
+    }
+    if (newEmail === user.email.toLowerCase()) {
+      customAlert("Info", "This is already your email.");
       return;
     }
     
@@ -6014,44 +6221,59 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
         await user.reauthenticateWithCredential(credential);
         
-        const emailCheck = await db.collection('usernames').where('email', '==', newEmail.toLowerCase()).get();
+        let methods = [];
+        try {
+          methods = await auth.fetchSignInMethodsForEmail(newEmail);
+        } catch (authErr) {}
+        
+        const emailCheck = await db.collection('usernames').where('email', '==', newEmail).get();
+        let isTaken = false;
         if (!emailCheck.empty) {
-          let isAlreadyMe = false;
           emailCheck.forEach(doc => {
-            if (doc.data().uid === user.uid) isAlreadyMe = true;
+            if (doc.data().uid !== user.uid) isTaken = true;
           });
-          if (!isAlreadyMe) {
-            showLoader(false);
-            customAlert("Error", "This email is already in use by another account!");
-            return;
-          }
         }
         
-        await user.updateEmail(newEmail);
+        if (methods.length > 0 || isTaken) {
+          showLoader(false);
+          customAlert("Error", "This email address is already in use by another account!");
+          return;
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        const batch = db.batch();
-        batch.update(db.collection('users').doc(user.uid), {
-          email: newEmail
-        });
-        batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
-          email: newEmail
-        });
-        await batch.commit();
+        google.script.run.withSuccessHandler(res => {
+          showLoader(false);
+          if (res.success) {
+            openOtpModal(newEmail, 'Email', newEmail, otp, credential);
+          } else {
+            customAlert("Verification Error", "Failed to send verification OTP: " + res.msg);
+          }
+        }).withFailureHandler(err => {
+          showLoader(false);
+          customAlert("Server Error", "Failed to connect to verification server: " + err.message);
+        }).sendOtpEmail(newEmail, otp, 'Email', newEmail);
         
-        showLoader(false);
-        customAlert("Success", "Email updated successfully to: " + newEmail);
       } catch (err) {
         showLoader(false);
-        customAlert("Authentication Error", "Failed to update email: " + err.message);
+        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
       }
     });
   }
   
   async function updateAccountPassword() {
     const input = document.getElementById('settingsPasswordInput');
+    const confirmInput = document.getElementById('settingsPasswordConfirmInput');
+    
     const newPassword = input.value.trim();
+    const confirmPassword = confirmInput.value.trim();
+    
     if (!newPassword || newPassword.length < 6) {
-      customAlert("Wait", "Password must be at least 6 characters.");
+      customAlert("Wait", "New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      customAlert("Wait", "New passwords do not match. Please retype correctly.");
       return;
     }
     
@@ -6073,13 +6295,23 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
         await user.reauthenticateWithCredential(credential);
         
-        await user.updatePassword(newPassword);
-        showLoader(false);
-        input.value = '';
-        customAlert("Success", "Password updated successfully!");
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        google.script.run.withSuccessHandler(res => {
+          showLoader(false);
+          if (res.success) {
+            openOtpModal(user.email, 'Password', newPassword, otp, credential);
+          } else {
+            customAlert("Verification Error", "Failed to send verification OTP: " + res.msg);
+          }
+        }).withFailureHandler(err => {
+          showLoader(false);
+          customAlert("Server Error", "Failed to connect to verification server: " + err.message);
+        }).sendOtpEmail(user.email, otp, 'Password', '********');
+        
       } catch (err) {
         showLoader(false);
-        customAlert("Authentication Error", "Failed to update password: " + err.message);
+        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
       }
     });
   }
