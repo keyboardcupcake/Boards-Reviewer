@@ -952,51 +952,11 @@
     </div>
     <div id="forgotPasswordForms" style="display: none;">
         <h3 style="margin-top:0; color:var(--primary);">Reset Password</h3>
-        
-        <!-- Section 1: Enter Username & Email to Request OTP -->
         <div id="pinRequestSection">
-          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and email. We will send you a secure 6-digit verification code to reset your password on this site.</p>
+          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you an official, secure password reset link to your email inbox instantly.</p>
           <div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
           <div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
-          <button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Verification OTP</button>
-          <button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button>
-        </div>
-        
-        <!-- Section 2: Enter OTP & New Password -->
-        <div id="pinVerificationSection" style="display: none; flex-direction:column; gap:12px;">
-          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 5px;">A secure 6-digit OTP code has been dispatched. Enter the code and your new password to verify and reset your account instantly.</p>
-          
-          <!-- Simulator Bypass Code Box for easy testing! -->
-          <div id="forgotSimulatorBypassBox" style="background: rgba(var(--primary-rgb, 225, 29, 72), 0.08); padding: 12px; border-radius: 8px; border: 1px solid var(--primary); margin: 5px 0;">
-            <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Simulator Bypass Code (For Testing):</span>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <code id="forgotSimulatorBypassCode" style="font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: 2px;">123456</code>
-              <span style="font-size: 11px; color: var(--text-light);">Use this code to verify instantly!</span>
-            </div>
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label>6-Digit Code</label>
-            <input type="text" id="resetPinInput" placeholder="******" style="text-align:center; letter-spacing:6px; font-weight:bold; font-size:16px; padding:10px;">
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label>New Password</label>
-            <div style="position:relative; display:flex; align-items:center; width:100%;">
-              <input type="password" id="resetNewPasswordInput" placeholder="Minimum 6 characters" style="padding:10px; padding-right:40px; font-size:14px; margin:0; width:100%;">
-              <span id="toggleResetNewPassEye" style="position:absolute; right:12px; cursor:pointer; font-size:16px; user-select:none; color:var(--text-light);" onclick="toggleSettingsPasswordVisibility('resetNewPasswordInput', 'toggleResetNewPassEye')">👁️</span>
-            </div>
-          </div>
-          
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label>Confirm New Password</label>
-            <div style="position:relative; display:flex; align-items:center; width:100%;">
-              <input type="password" id="resetConfirmPasswordInput" placeholder="Retype new password" style="padding:10px; padding-right:40px; font-size:14px; margin:0; width:100%;">
-              <span id="toggleResetConfirmPassEye" style="position:absolute; right:12px; cursor:pointer; font-size:16px; user-select:none; color:var(--text-light);" onclick="toggleSettingsPasswordVisibility('resetConfirmPasswordInput', 'toggleResetConfirmPassEye')">👁️</span>
-            </div>
-          </div>
-          
-          <button onclick="resetPasswordWithPin()" style="margin-top: 5px; margin-bottom: 10px;">Verify & Reset Password</button>
+          <button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Password Reset Email</button>
           <button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button>
         </div>
     </div>
@@ -3241,8 +3201,6 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('forgotPasswordForms').style.display = 'none';
     document.getElementById('authForms').style.display = 'block';
   }
-  let tempResetRequest = null;
-  
   async function requestResetPin() {
     const username = document.getElementById('resetUser').value.trim();
     const email = document.getElementById('resetEmail').value.trim();
@@ -3268,78 +3226,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         return;
       }
       
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const uid = usernameDoc.data().uid;
-      
-      // Store OTP in Firestore user document securely
-      await db.collection('users').doc(uid).update({
-        resetPin: otp,
-        resetPinTime: Date.now()
-      });
-      
-      tempResetRequest = {
-        username: username,
-        email: email,
-        otpCode: otp,
-        uid: uid
-      };
-      
-      // Dispatch real email in background
-      google.script.run.withSuccessHandler(res => {
-        showLoader(false);
-        document.getElementById('forgotSimulatorBypassCode').innerText = otp;
-        document.getElementById('pinRequestSection').style.display = 'none';
-        document.getElementById('pinVerificationSection').style.display = 'flex';
-      }).withFailureHandler(err => {
-        showLoader(false);
-        document.getElementById('forgotSimulatorBypassCode').innerText = otp;
-        document.getElementById('pinRequestSection').style.display = 'none';
-        document.getElementById('pinVerificationSection').style.display = 'flex';
-      }).sendOtpEmail(email, otp, 'Password Recovery', 'Reset Password');
-      
-    } catch(err) {
+      // Trigger Firebase native password reset email!
+      await auth.sendPasswordResetEmail(email);
       showLoader(false);
-      customAlert("Error", err.message);
-    }
-  }
-  
-  async function resetPasswordWithPin() {
-    const pin = document.getElementById('resetPinInput').value.trim();
-    const newPassword = document.getElementById('resetNewPasswordInput').value.trim();
-    const confirmPassword = document.getElementById('resetConfirmPasswordInput').value.trim();
-    
-    if (!tempResetRequest) {
-      customAlert("Error", "No active password recovery request found.");
-      return;
-    }
-    if (!pin || pin.length !== 6 || isNaN(pin)) {
-      customAlert("Wait", "Please enter a valid 6-digit numeric OTP code.");
-      return;
-    }
-    if (pin !== tempResetRequest.otpCode) {
-      customAlert("Invalid Code", "The OTP code you entered is incorrect. Please check your email and try again.");
-      return;
-    }
-    if (!newPassword || newPassword.length < 6) {
-      customAlert("Wait", "New password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      customAlert("Wait", "New passwords do not match. Please retype correctly.");
-      return;
-    }
-    
-    showLoader(true);
-    try {
-      // 1. Write the temporary recovery password directly to their Firestore profile
-      await db.collection('users').doc(tempResetRequest.uid).update({
-        tempResetPassword: newPassword,
-        resetPin: firebase.firestore.FieldValue.delete(),
-        resetPinTime: firebase.firestore.FieldValue.delete()
-      });
-      
-      showLoader(false);
-      customAlert("Success", "Password reset successfully! You may now log in using your new password.");
+      customAlert("Reset Link Dispatched ✉️", "A secure password reset link has been sent to your email: " + email + ".\n\nPlease check your inbox (and spam folder) and click the link to reset your password, then return here to log in!");
       cancelForgotPassword();
       
     } catch(err) {
@@ -6610,15 +6500,39 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         return;
       }
 
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Direct Firebase native verifyBeforeUpdateEmail call!
+      const executeEmailVerify = async (reauthCred) => {
+        showLoader(true);
+        try {
+          if (reauthCred) {
+            await user.reauthenticateWithCredential(reauthCred);
+          }
+          await user.verifyBeforeUpdateEmail(newEmail);
+          
+          const batch = db.batch();
+          batch.update(db.collection('users').doc(user.uid), {
+            email: newEmail
+          });
+          batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
+            email: newEmail
+          });
+          await batch.commit();
+
+          showLoader(false);
+          customAlert("Verification Email Dispatched ✉️", "A secure verification link has been sent to your new email: " + newEmail + ".\n\nPlease check your inbox (and spam folder) and click the link to verify and complete this update!");
+          input.value = '';
+          closeSettingsModal();
+        } catch (err) {
+          showLoader(false);
+          if (err.code === 'auth/requires-recent-login') {
+            promptReauthForUpdate(executeEmailVerify);
+          } else {
+            customAlert("Update Failed", err.message);
+          }
+        }
+      };
       
-      google.script.run.withSuccessHandler(res => {
-        showLoader(false);
-        openOtpModal(newEmail, 'Email', newEmail, otp, null);
-      }).withFailureHandler(err => {
-        showLoader(false);
-        openOtpModal(newEmail, 'Email', newEmail, otp, null);
-      }).sendOtpEmail(newEmail, otp, 'Email', newEmail);
+      await executeEmailVerify(null);
       
     } catch (err) {
       showLoader(false);
@@ -6649,15 +6563,29 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
     
     showLoader(true);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const executePasswordUpdate = async (reauthCred) => {
+      showLoader(true);
+      try {
+        if (reauthCred) {
+          await user.reauthenticateWithCredential(reauthCred);
+        }
+        await user.updatePassword(newPassword);
+        showLoader(false);
+        customAlert("Success", "Password updated successfully!");
+        input.value = '';
+        confirmInput.value = '';
+        closeSettingsModal();
+      } catch (err) {
+        showLoader(false);
+        if (err.code === 'auth/requires-recent-login') {
+          promptReauthForUpdate(executePasswordUpdate);
+        } else {
+          customAlert("Update Failed", err.message);
+        }
+      }
+    };
     
-    google.script.run.withSuccessHandler(res => {
-      showLoader(false);
-      openOtpModal(user.email, 'Password', newPassword, otp, null);
-    }).withFailureHandler(err => {
-      showLoader(false);
-      openOtpModal(user.email, 'Password', newPassword, otp, null);
-    }).sendOtpEmail(user.email, otp, 'Password', '********');
+    await executePasswordUpdate(null);
   }
   
   function openShareModal() {
