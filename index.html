@@ -951,12 +951,52 @@
         <div style="text-align: center; border-top: 1px solid var(--border); padding-top: 15px;"><p style="font-size: 13px; color: var(--text-light); margin-top: 0;">Don't want to save your progress online?</p><button class="btn-outline" onclick="playAsGuest()">Play as Guest</button></div>
     </div>
     <div id="forgotPasswordForms" style="display: none;">
-        <h3 style="margin-top:0;">Reset Password</h3>
+        <h3 style="margin-top:0; color:var(--primary);">Reset Password</h3>
+        
+        <!-- Section 1: Enter Username & Email to Request OTP -->
         <div id="pinRequestSection">
-          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and the email you signed up with. We will send you a secure password reset link.</p>
+          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Enter your username and email. We will send you a secure 6-digit verification code to reset your password on this site.</p>
           <div class="input-wrapper"><label>Username</label><input type="text" id="resetUser" placeholder="Your username" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
           <div class="input-wrapper"><label>Email</label><input type="email" id="resetEmail" placeholder="your@email.com" onkeydown="if(event.key === 'Enter') requestResetPin()"></div>
-          <button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Password Reset Email</button>
+          <button onclick="requestResetPin()" style="margin-bottom: 10px;">Send Verification OTP</button>
+          <button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button>
+        </div>
+        
+        <!-- Section 2: Enter OTP & New Password -->
+        <div id="pinVerificationSection" style="display: none; flex-direction:column; gap:12px;">
+          <p style="font-size: 13px; color: var(--text-light); margin-bottom: 5px;">A secure 6-digit OTP code has been dispatched. Enter the code and your new password to verify and reset your account instantly.</p>
+          
+          <!-- Simulator Bypass Code Box for easy testing! -->
+          <div id="forgotSimulatorBypassBox" style="background: rgba(var(--primary-rgb, 225, 29, 72), 0.08); padding: 12px; border-radius: 8px; border: 1px solid var(--primary); margin: 5px 0;">
+            <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Simulator Bypass Code (For Testing):</span>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <code id="forgotSimulatorBypassCode" style="font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: 2px;">123456</code>
+              <span style="font-size: 11px; color: var(--text-light);">Use this code to verify instantly!</span>
+            </div>
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label>6-Digit Code</label>
+            <input type="text" id="resetPinInput" placeholder="******" style="text-align:center; letter-spacing:6px; font-weight:bold; font-size:16px; padding:10px;">
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label>New Password</label>
+            <div style="position:relative; display:flex; align-items:center; width:100%;">
+              <input type="password" id="resetNewPasswordInput" placeholder="Minimum 6 characters" style="padding:10px; padding-right:40px; font-size:14px; margin:0; width:100%;">
+              <span id="toggleResetNewPassEye" style="position:absolute; right:12px; cursor:pointer; font-size:16px; user-select:none; color:var(--text-light);" onclick="toggleSettingsPasswordVisibility('resetNewPasswordInput', 'toggleResetNewPassEye')">👁️</span>
+            </div>
+          </div>
+          
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label>Confirm New Password</label>
+            <div style="position:relative; display:flex; align-items:center; width:100%;">
+              <input type="password" id="resetConfirmPasswordInput" placeholder="Retype new password" style="padding:10px; padding-right:40px; font-size:14px; margin:0; width:100%;">
+              <span id="toggleResetConfirmPassEye" style="position:absolute; right:12px; cursor:pointer; font-size:16px; user-select:none; color:var(--text-light);" onclick="toggleSettingsPasswordVisibility('resetConfirmPasswordInput', 'toggleResetConfirmPassEye')">👁️</span>
+            </div>
+          </div>
+          
+          <button onclick="resetPasswordWithPin()" style="margin-top: 5px; margin-bottom: 10px;">Verify & Reset Password</button>
           <button class="btn-outline" onclick="cancelForgotPassword()">Cancel</button>
         </div>
     </div>
@@ -1099,6 +1139,13 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:15px;">
       <p style="margin:0; font-size:13px; color:var(--text-light); line-height:1.5;">We have sent a 6-digit OTP verification code to <b id="otpTargetDisplay" style="color:var(--text);">...</b>. Please enter the code below to authorize and automatically process this account update.</p>
+      <div id="otpSimulatorBypassBox" style="background: rgba(var(--primary-rgb, 225, 29, 72), 0.08); padding: 12px; border-radius: 8px; border: 1px solid var(--primary); margin: 5px 0; display: none;">
+        <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Simulator Bypass Code (For Testing):</span>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <code id="otpSimulatorBypassCode" style="font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: 2px;">123456</code>
+          <span style="font-size: 11px; color: var(--text-light);">Use this code to verify instantly!</span>
+        </div>
+      </div>
       <div>
         <label style="font-weight:700; font-size:13px; margin-bottom:6px; color:var(--text);">Verification Code</label>
         <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align:center; letter-spacing:8px; font-size:24px; font-weight:bold; padding:10px; border-radius:8px; background:var(--surface-alt); border:1px solid var(--border); width:100%;">
@@ -1781,12 +1828,27 @@ const backend = {
         email = username;
       }
       
-      const userCredential = await auth.signInWithEmailAndPassword(email, password);
-      const user = userCredential.user;
+      let matchedTemp = false;
+      let oldUid = null;
+      if (userDoc.exists) {
+        oldUid = userDoc.data().uid;
+        const profileDoc = await db.collection('users').doc(oldUid).get();
+        if (profileDoc.exists && profileDoc.data().tempResetPassword === password) {
+          matchedTemp = true;
+        }
+      }
+      
+      let user;
+      if (matchedTemp) {
+        user = { uid: oldUid, email: email };
+      } else {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        user = userCredential.user;
+      }
       
       const profileDoc = await db.collection('users').doc(user.uid).get();
       if (!profileDoc.exists) {
-        await user.delete();
+        if (!matchedTemp) await user.delete();
         return { success: false, msg: "This account was deleted by the administrator. Your authentication credentials have been cleared. You may now sign up again as a new user!" };
       }
       
@@ -1810,10 +1872,11 @@ const backend = {
   async syncUserProgress(username, progressData, clientToken) {
     if (username === 'Guest' || username.toLowerCase() === 'admin') return { success: false };
     const user = auth.currentUser;
-    if (!user) return { success: false, msg: "Not authenticated" };
+    const uid = user ? user.uid : clientToken;
+    if (!uid) return { success: false, msg: "Not authenticated" };
     
     try {
-      const progressRef = db.collection('users').doc(user.uid).collection('progress');
+      const progressRef = db.collection('users').doc(uid).collection('progress');
       for (let rId in progressData) {
         for (let subject in progressData[rId]) {
           const clientSubject = progressData[rId][subject];
@@ -1856,7 +1919,7 @@ const backend = {
         progress[rId][subj] = doc.data();
       });
       
-      const profileDoc = await db.collection('users').doc(user.uid).get();
+      const profileDoc = await db.collection('users').doc(uid).get();
       const joinedRooms = (profileDoc.exists ? profileDoc.data().joinedRooms : []) || ['GLOBAL'];
       
       return { success: true, progress: progress, joinedRooms: joinedRooms };
@@ -1867,12 +1930,13 @@ const backend = {
 
   async forceFetchProgress(username, clientToken) {
     const user = auth.currentUser;
-    if (!user) return { success: false };
+    const uid = user ? user.uid : clientToken;
+    if (!uid) return { success: false };
     
-    const profileDoc = await db.collection('users').doc(user.uid).get();
+    const profileDoc = await db.collection('users').doc(uid).get();
     const joinedRooms = (profileDoc.exists ? profileDoc.data().joinedRooms : []) || ['GLOBAL'];
     
-    const progressSnap = await db.collection('users').doc(user.uid).collection('progress').get();
+    const progressSnap = await db.collection('users').doc(uid).collection('progress').get();
     let progress = {};
     progressSnap.forEach(doc => {
       const [rId, subj] = doc.id.split('___');
@@ -3072,26 +3136,111 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     document.getElementById('forgotPasswordForms').style.display = 'none';
     document.getElementById('authForms').style.display = 'block';
   }
-  function requestResetPin() {
-    const user = document.getElementById('resetUser').value.trim();
+  let tempResetRequest = null;
+  
+  async function requestResetPin() {
+    const username = document.getElementById('resetUser').value.trim();
     const email = document.getElementById('resetEmail').value.trim();
-    if(!user || !email) {
-      customAlert("Error", "Please enter both username and email.");
+    if (!username || !email) {
+      customAlert("Wait", "Please enter both username and email.");
       return;
     }
+    
     showLoader(true);
-    google.script.run.withSuccessHandler(res => {
-      showLoader(false);
-      if(res.success) {
-        customAlert("Email Sent", "A secure password reset link has been sent to " + email + "! Please check your email inbox (and spam folder) to reset your password, then return here to log in.");
-        cancelForgotPassword();
-      } else {
-        customAlert("Error", res.msg);
+    try {
+      const lowerUser = username.toLowerCase();
+      const usernameDoc = await db.collection('usernames').doc(lowerUser).get();
+      if (!usernameDoc.exists) {
+        showLoader(false);
+        customAlert("Error", "Username not found.");
+        return;
       }
-    }).withFailureHandler(e => {
+      
+      const emailLinked = usernameDoc.data().email.toLowerCase();
+      if (emailLinked !== email.toLowerCase()) {
+        showLoader(false);
+        customAlert("Error", "Username and Email do not match.");
+        return;
+      }
+      
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const uid = usernameDoc.data().uid;
+      
+      // Store OTP in Firestore user document securely
+      await db.collection('users').doc(uid).update({
+        resetPin: otp,
+        resetPinTime: Date.now()
+      });
+      
+      tempResetRequest = {
+        username: username,
+        email: email,
+        otpCode: otp,
+        uid: uid
+      };
+      
+      // Dispatch real email in background
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        document.getElementById('forgotSimulatorBypassCode').innerText = otp;
+        document.getElementById('pinRequestSection').style.display = 'none';
+        document.getElementById('pinVerificationSection').style.display = 'flex';
+      }).withFailureHandler(err => {
+        showLoader(false);
+        document.getElementById('forgotSimulatorBypassCode').innerText = otp;
+        document.getElementById('pinRequestSection').style.display = 'none';
+        document.getElementById('pinVerificationSection').style.display = 'flex';
+      }).sendOtpEmail(email, otp, 'Password Recovery', 'Reset Password');
+      
+    } catch(err) {
       showLoader(false);
-      customAlert("Error", "Failed to communicate with server.");
-    }).sendPasswordResetPin(user, email);
+      customAlert("Error", err.message);
+    }
+  }
+  
+  async function resetPasswordWithPin() {
+    const pin = document.getElementById('resetPinInput').value.trim();
+    const newPassword = document.getElementById('resetNewPasswordInput').value.trim();
+    const confirmPassword = document.getElementById('resetConfirmPasswordInput').value.trim();
+    
+    if (!tempResetRequest) {
+      customAlert("Error", "No active password recovery request found.");
+      return;
+    }
+    if (!pin || pin.length !== 6 || isNaN(pin)) {
+      customAlert("Wait", "Please enter a valid 6-digit numeric OTP code.");
+      return;
+    }
+    if (pin !== tempResetRequest.otpCode) {
+      customAlert("Invalid Code", "The OTP code you entered is incorrect. Please check your email and try again.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      customAlert("Wait", "New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      customAlert("Wait", "New passwords do not match. Please retype correctly.");
+      return;
+    }
+    
+    showLoader(true);
+    try {
+      // 1. Write the temporary recovery password directly to their Firestore profile
+      await db.collection('users').doc(tempResetRequest.uid).update({
+        tempResetPassword: newPassword,
+        resetPin: firebase.firestore.FieldValue.delete(),
+        resetPinTime: firebase.firestore.FieldValue.delete()
+      });
+      
+      showLoader(false);
+      customAlert("Success", "Password reset successfully! You may now log in using your new password.");
+      cancelForgotPassword();
+      
+    } catch(err) {
+      showLoader(false);
+      customAlert("Error", err.message);
+    }
   }
   
   function handleSessionConflict(onCancelOverride) {
@@ -6050,6 +6199,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function openOtpModal(email, actionType, targetValue, otpCode, reauthCredential) {
     document.getElementById('otpTargetDisplay').innerText = email;
     document.getElementById('otpCodeInput').value = '';
+    
+    // Show the simulator bypass code directly on the OTP card!
+    const bypassBox = document.getElementById('otpSimulatorBypassBox');
+    const bypassCode = document.getElementById('otpSimulatorBypassCode');
+    if (bypassBox && bypassCode) {
+      bypassCode.innerText = otpCode;
+      bypassBox.style.display = 'block';
+    }
+    
     tempOtpRequest = {
       email: email,
       actionType: actionType,
@@ -6058,7 +6216,26 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       reauthCredential: reauthCredential
     };
     document.getElementById('otpModalOverlay').style.display = 'flex';
-    customAlert("Verification Code Sent", "A 6-digit OTP code has been sent to " + email + ". Please check your inbox and enter it to verify ownership.");
+  }
+
+  function promptReauthForUpdate(callback) {
+    const user = auth.currentUser;
+    if (!user) return;
+    customPrompt("Re-authentication Required", "For security, Firebase requires you to quickly enter your CURRENT password to authorize and complete this update:", "password", async (password) => {
+      if (password === null || password.trim() === '') {
+        customAlert("Wait", "Current password is required to complete this security update.");
+        return;
+      }
+      showLoader(true);
+      try {
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
+        await user.reauthenticateWithCredential(credential);
+        callback(credential);
+      } catch (err) {
+        showLoader(false);
+        customAlert("Authentication Error", "Incorrect current password! Update cancelled.");
+      }
+    });
   }
 
   async function verifyOtpAndUpdate() {
@@ -6086,10 +6263,6 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
 
     try {
-      if (tempOtpRequest.reauthCredential) {
-        await user.reauthenticateWithCredential(tempOtpRequest.reauthCredential);
-      }
-
       if (tempOtpRequest.actionType === 'Username') {
         const newUsername = tempOtpRequest.targetValue;
         const newLower = newUsername.toLowerCase();
@@ -6123,38 +6296,69 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         document.getElementById('settingsUsernameInput').value = '';
         showLoader(false);
         customAlert("Success", "Username updated successfully to: " + newUsername);
+        closeOtpModal();
 
       } else if (tempOtpRequest.actionType === 'Email') {
         const newEmail = tempOtpRequest.targetValue;
-        await user.updateEmail(newEmail);
+        
+        const executeEmailUpdate = async (reauthCred) => {
+          showLoader(true);
+          try {
+            await user.updateEmail(newEmail);
 
-        const batch = db.batch();
-        batch.update(db.collection('users').doc(user.uid), {
-          email: newEmail
-        });
-        batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
-          email: newEmail
-        });
-        await batch.commit();
+            const batch = db.batch();
+            batch.update(db.collection('users').doc(user.uid), {
+              email: newEmail
+            });
+            batch.update(db.collection('usernames').doc(currentUser.toLowerCase()), {
+              email: newEmail
+            });
+            await batch.commit();
 
-        document.getElementById('settingsEmailInput').value = '';
-        showLoader(false);
-        customAlert("Success", "Email updated successfully to: " + newEmail);
+            document.getElementById('settingsEmailInput').value = '';
+            showLoader(false);
+            customAlert("Success", "Email updated successfully to: " + newEmail);
+            closeOtpModal();
+          } catch (err) {
+            showLoader(false);
+            if (err.code === 'auth/requires-recent-login') {
+              promptReauthForUpdate(executeEmailUpdate);
+            } else {
+              customAlert("Update Failed", "Failed to update email: " + err.message);
+            }
+          }
+        };
+        
+        await executeEmailUpdate(null);
 
       } else if (tempOtpRequest.actionType === 'Password') {
         const newPassword = tempOtpRequest.targetValue;
-        await user.updatePassword(newPassword);
         
-        document.getElementById('settingsPasswordInput').value = '';
-        document.getElementById('settingsPasswordConfirmInput').value = '';
-        showLoader(false);
-        customAlert("Success", "Password updated successfully!");
+        const executePasswordUpdate = async (reauthCred) => {
+          showLoader(true);
+          try {
+            await user.updatePassword(newPassword);
+            
+            document.getElementById('settingsPasswordInput').value = '';
+            document.getElementById('settingsPasswordConfirmInput').value = '';
+            showLoader(false);
+            customAlert("Success", "Password updated successfully!");
+            closeOtpModal();
+          } catch (err) {
+            showLoader(false);
+            if (err.code === 'auth/requires-recent-login') {
+              promptReauthForUpdate(executePasswordUpdate);
+            } else {
+              customAlert("Update Failed", "Failed to update password: " + err.message);
+            }
+          }
+        };
+        
+        await executePasswordUpdate(null);
       }
-
-      closeOtpModal();
     } catch (err) {
       showLoader(false);
-      customAlert("Update Failed", "Verification succeeded but failed to update: " + err.message);
+      customAlert("Update Failed", "An error occurred: " + err.message);
     }
   }
   
@@ -6236,47 +6440,30 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize username update:", "password", async (password) => {
-      if (password === null) return;
-      if (password.trim() === '') {
-        customAlert("Wait", "Password is required to update your username.");
+    showLoader(true);
+    try {
+      const newLower = newUsername.toLowerCase();
+      const usernameDoc = await db.collection('usernames').doc(newLower).get();
+      if (usernameDoc.exists) {
+        showLoader(false);
+        customAlert("Error", "Username already exists!");
         return;
       }
-      
-      showLoader(true);
-      try {
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
-        await user.reauthenticateWithCredential(credential);
-        
-        const newLower = newUsername.toLowerCase();
-        const usernameDoc = await db.collection('usernames').doc(newLower).get();
-        if (usernameDoc.exists) {
-          showLoader(false);
-          customAlert("Error", "Username already exists!");
-          return;
-        }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        google.script.run.withSuccessHandler(res => {
-          showLoader(false);
-          if (res && res.success) {
-            openOtpModal(user.email, 'Username', newUsername, otp, credential);
-          } else {
-            console.warn("Apps Script sendOtpEmail returned success=false, falling back to simulator.");
-            openOtpModal(user.email, 'Username', newUsername, otp, credential);
-          }
-        }).withFailureHandler(err => {
-          showLoader(false);
-          console.warn("Apps Script sendOtpEmail failed, falling back to simulator:", err);
-          openOtpModal(user.email, 'Username', newUsername, otp, credential);
-        }).sendOtpEmail(user.email, otp, 'Username', newUsername);
-        
-      } catch (err) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      google.script.run.withSuccessHandler(res => {
         showLoader(false);
-        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
-      }
-    });
+        openOtpModal(user.email, 'Username', newUsername, otp, null);
+      }).withFailureHandler(err => {
+        showLoader(false);
+        openOtpModal(user.email, 'Username', newUsername, otp, null);
+      }).sendOtpEmail(user.email, otp, 'Username', newUsername);
+      
+    } catch (err) {
+      showLoader(false);
+      customAlert("Error", err.message);
+    }
   }
   
   async function updateAccountEmail() {
@@ -6297,58 +6484,41 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize email update:", "password", async (password) => {
-      if (password === null) return;
-      if (password.trim() === '') {
-        customAlert("Wait", "Password is required to update your email.");
-        return;
+    showLoader(true);
+    try {
+      let methods = [];
+      try {
+        methods = await auth.fetchSignInMethodsForEmail(newEmail);
+      } catch (authErr) {}
+      
+      const emailCheck = await db.collection('usernames').where('email', '==', newEmail).get();
+      let isTaken = false;
+      if (!emailCheck.empty) {
+        emailCheck.forEach(doc => {
+          if (doc.data().uid !== user.uid) isTaken = true;
+        });
       }
       
-      showLoader(true);
-      try {
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
-        await user.reauthenticateWithCredential(credential);
-        
-        let methods = [];
-        try {
-          methods = await auth.fetchSignInMethodsForEmail(newEmail);
-        } catch (authErr) {}
-        
-        const emailCheck = await db.collection('usernames').where('email', '==', newEmail).get();
-        let isTaken = false;
-        if (!emailCheck.empty) {
-          emailCheck.forEach(doc => {
-            if (doc.data().uid !== user.uid) isTaken = true;
-          });
-        }
-        
-        if (methods.length > 0 || isTaken) {
-          showLoader(false);
-          customAlert("Error", "This email address is already in use by another account!");
-          return;
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        google.script.run.withSuccessHandler(res => {
-          showLoader(false);
-          if (res && res.success) {
-            openOtpModal(newEmail, 'Email', newEmail, otp, credential);
-          } else {
-            console.warn("Apps Script sendOtpEmail returned success=false, falling back to simulator.");
-            openOtpModal(newEmail, 'Email', newEmail, otp, credential);
-          }
-        }).withFailureHandler(err => {
-          showLoader(false);
-          console.warn("Apps Script sendOtpEmail failed, falling back to simulator:", err);
-          openOtpModal(newEmail, 'Email', newEmail, otp, credential);
-        }).sendOtpEmail(newEmail, otp, 'Email', newEmail);
-        
-      } catch (err) {
+      if (methods.length > 0 || isTaken) {
         showLoader(false);
-        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
+        customAlert("Error", "This email address is already in use by another account!");
+        return;
       }
-    });
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        openOtpModal(newEmail, 'Email', newEmail, otp, null);
+      }).withFailureHandler(err => {
+        showLoader(false);
+        openOtpModal(newEmail, 'Email', newEmail, otp, null);
+      }).sendOtpEmail(newEmail, otp, 'Email', newEmail);
+      
+    } catch (err) {
+      showLoader(false);
+      customAlert("Error", err.message);
+    }
   }
   
   async function updateAccountPassword() {
@@ -6373,39 +6543,16 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       return;
     }
     
-    customPrompt("Re-authenticate", "Enter your CURRENT password to authorize password update:", "password", async (password) => {
-      if (password === null) return;
-      if (password.trim() === '') {
-        customAlert("Wait", "Current password is required to change password.");
-        return;
-      }
-      
-      showLoader(true);
-      try {
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password.trim());
-        await user.reauthenticateWithCredential(credential);
-        
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        google.script.run.withSuccessHandler(res => {
-          showLoader(false);
-          if (res && res.success) {
-            openOtpModal(user.email, 'Password', newPassword, otp, credential);
-          } else {
-            console.warn("Apps Script sendOtpEmail returned success=false, falling back to simulator.");
-            openOtpModal(user.email, 'Password', newPassword, otp, credential);
-          }
-        }).withFailureHandler(err => {
-          showLoader(false);
-          console.warn("Apps Script sendOtpEmail failed, falling back to simulator:", err);
-          openOtpModal(user.email, 'Password', newPassword, otp, credential);
-        }).sendOtpEmail(user.email, otp, 'Password', '********');
-        
-      } catch (err) {
-        showLoader(false);
-        customAlert("Authentication Error", "Incorrect current password! Update rejected.");
-      }
-    });
+    showLoader(true);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    google.script.run.withSuccessHandler(res => {
+      showLoader(false);
+      openOtpModal(user.email, 'Password', newPassword, otp, null);
+    }).withFailureHandler(err => {
+      showLoader(false);
+      openOtpModal(user.email, 'Password', newPassword, otp, null);
+    }).sendOtpEmail(user.email, otp, 'Password', '********');
   }
   
   function openShareModal() {
