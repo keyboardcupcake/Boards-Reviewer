@@ -1759,7 +1759,28 @@ const backend = {
     
     try {
       const userDoc = await db.collection('usernames').doc(lowerUser).get();
-      if (userDoc.exists) return { success: false, msg: "Username already exists!" };
+      if (userDoc.exists) {
+        // Self-healing orphaned username document cleanup!
+        const oldEmail = userDoc.data().email;
+        let authExists = true;
+        try {
+          await auth.signInWithEmailAndPassword(oldEmail, 'dummyPasswordCheck123');
+        } catch (checkErr) {
+          if (checkErr.code === 'auth/user-not-found') {
+            authExists = false;
+          }
+        }
+        
+        if (!authExists) {
+          console.warn(`Orphaned username doc found for '${username}'. Deleting from Firestore so they can register cleanly.`);
+          await db.collection('usernames').doc(lowerUser).delete();
+          if (userDoc.data().uid) {
+            await db.collection('users').doc(userDoc.data().uid).delete();
+          }
+        } else {
+          return { success: false, msg: "Username already exists!" };
+        }
+      }
       
       let userCredential;
       try {
@@ -1800,10 +1821,35 @@ const backend = {
     if (lowerUser === 'admin') {
       try {
         const adminDoc = await db.collection('usernames').doc('admin').get();
-        if (!adminDoc.exists) {
+        let adminExistsInAuth = true;
+        try {
+          await auth.signInWithEmailAndPassword('admin@boards-reviewer.com', 'dummyPasswordCheck123');
+        } catch (checkErr) {
+          if (checkErr.code === 'auth/user-not-found') {
+            adminExistsInAuth = false;
+          }
+        }
+        
+        if (!adminDoc.exists || !adminExistsInAuth) {
+          console.warn("Admin account is missing in Auth or Firestore. Auto-registering Admin.");
           const adminEmail = 'admin@boards-reviewer.com';
-          const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, password);
-          const user = userCredential.user;
+          let user;
+          try {
+            const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, password);
+            user = userCredential.user;
+          } catch (signupErr) {
+            if (signupErr.code === 'auth/email-already-in-use') {
+              try {
+                const userCredential = await auth.signInWithEmailAndPassword(adminEmail, password);
+                user = userCredential.user;
+              } catch(signInErr) {
+                throw signupErr;
+              }
+            } else {
+              throw signupErr;
+            }
+          }
+          
           await db.collection('usernames').doc('admin').set({
             uid: user.uid,
             email: adminEmail,
