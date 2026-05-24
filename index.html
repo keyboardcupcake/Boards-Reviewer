@@ -1846,10 +1846,15 @@ const backend = {
         user = userCredential.user;
       }
       
-      const profileDoc = await db.collection('users').doc(user.uid).get();
+      let profileDoc = await db.collection('users').doc(user.uid).get();
       if (!profileDoc.exists) {
-        if (!matchedTemp) await user.delete();
-        return { success: false, msg: "This account was deleted by the administrator. Your authentication credentials have been cleared. You may now sign up again as a new user!" };
+        const actualName = userDoc.exists ? userDoc.data().username : username;
+        await db.collection('users').doc(user.uid).set({
+          username: actualName,
+          email: email,
+          joinedRooms: ['GLOBAL']
+        });
+        profileDoc = await db.collection('users').doc(user.uid).get();
       }
       
       const profile = profileDoc.data() || {};
