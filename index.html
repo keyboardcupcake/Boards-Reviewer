@@ -1892,6 +1892,35 @@ const backend = {
         user = userCredential.user;
       }
       
+      // Self-healing: if the User UID has changed (e.g. recreated in Auth), update Firestore!
+      if (userDoc.exists && userDoc.data().uid !== user.uid) {
+        console.warn("User UID mismatch detected. Automatically migrating Firestore documents to new UID:", user.uid);
+        const oldUid = userDoc.data().uid;
+        
+        try {
+          const oldProfileDoc = await db.collection('users').doc(oldUid).get();
+          if (oldProfileDoc.exists) {
+            const oldProfileData = oldProfileDoc.data();
+            await db.collection('users').doc(user.uid).set(oldProfileData);
+            await db.collection('users').doc(oldUid).delete();
+            
+            const oldProgressSnap = await db.collection('users').doc(oldUid).collection('progress').get();
+            const batch = db.batch();
+            oldProgressSnap.forEach(doc => {
+              batch.set(db.collection('users').doc(user.uid).collection('progress').doc(doc.id), doc.data());
+              batch.delete(doc.ref);
+            });
+            await batch.commit();
+          }
+          
+          await db.collection('usernames').doc(lowerUser).update({
+            uid: user.uid
+          });
+        } catch(migrationErr) {
+          console.error("Self-healing UID migration error:", migrationErr);
+        }
+      }
+      
       let profileDoc = await db.collection('users').doc(user.uid).get();
       if (!profileDoc.exists) {
         const actualName = userDoc.exists ? userDoc.data().username : username;
