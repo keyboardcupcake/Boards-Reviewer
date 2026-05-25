@@ -4734,25 +4734,48 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     syncToCloud();
   }
   
+  function calculateSessionStats() {
+    const subject = getSafeSubject();
+    const pKey = getProgressKey();
+    let score = 0;
+    let attempted = 0;
+    
+    if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject][pKey]) {
+      const answers = seenQuestions[currentRoomId][subject][pKey];
+      filteredQs.forEach(q => {
+        const userAns = answers[q.id];
+        if (userAns) {
+          attempted++;
+          if (userAns === q.correct || userAns === 'migrated') {
+            score++;
+          }
+        }
+      });
+    }
+    sessionScore = score;
+    sessionAttempted = attempted;
+  }
+
   function handleTagSwitch() {
     const subjectSelect = document.getElementById('subjectSelect');
     if (!subjectSelect || !subjectSelect.value) return;
     const subject = subjectSelect.value;
     const pKey = initSubjectMemory(subject);
     
+    filteredQs = currentQuestions;
+    const selectedTag = document.getElementById('tagFilter').value;
+    if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag);
+    
     let savedState = null;
     if (currentUser && currentUser !== 'Guest' && currentUser.toLowerCase() !== 'admin') {
       // Cloud-synced account: ONLY load state from seenQuestions (synced to Firestore) to prevent fallback cache bugs!
       if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject][`state_${pKey}`]) {
         savedState = JSON.stringify(seenQuestions[currentRoomId][subject][`state_${pKey}`]);
-        // Sync local storage as well to keep them aligned
         localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, savedState);
       } else {
-        // No active cloud session found (e.g. progress was reset/wiped): purge local storage cache!
         localStorage.removeItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
       }
     } else {
-      // Local/Guest account: fallback to local storage
       savedState = localStorage.getItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
     }
     
@@ -4761,13 +4784,16 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       pendingQueue = s.pendingQueue || [];
       sessionHistory = s.sessionHistory || [];
       currentHistoryIndex = s.currentHistoryIndex !== undefined ? s.currentHistoryIndex : -1;
-      sessionScore = s.sessionScore || 0;
-      sessionAttempted = s.sessionAttempted || 0;
       sessionTotalSeconds = s.sessionTotalSeconds || 0;
       
-      filteredQs = currentQuestions;
-      const selectedTag = document.getElementById('tagFilter').value;
-      if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag);
+      // If history is empty but we have answers, self-heal history!
+      if (sessionHistory.length === 0) {
+        const answeredIds = filteredQs.filter(q => seenQuestions[currentRoomId][subject][pKey][q.id]).map(q => q.id);
+        if (answeredIds.length > 0) {
+          sessionHistory = answeredIds;
+          currentHistoryIndex = sessionHistory.length - 1;
+        }
+      }
       
       if (sessionHistory.length > 0 && currentHistoryIndex !== -1) {
         currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]);
@@ -4778,9 +4804,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           pendingQueue = filteredQs.map(q => q.id);
           sessionHistory = [];
           currentHistoryIndex = -1;
-          sessionScore = 0;
-          sessionAttempted = 0;
           sessionTotalSeconds = 0;
+          calculateSessionStats();
           updateScoreUI();
           document.getElementById('quizArea').style.display = 'none';
           customAlert("Quiz Reset", "The question you were answering is no longer in the bank. Progress for this group reset.");
@@ -4791,23 +4816,23 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }
     } else {
       buildQueue();
-      sessionHistory = [];
-      currentHistoryIndex = -1;
-      currentQuestionObj = null;
-      sessionAttempted = 0;
-      sessionScore = 0;
       sessionTotalSeconds = 0;
-      const mode = document.querySelector('input[name="mode"]:checked').value;
-      if (mode === 'session') {
-        filteredQs.forEach(q => {
-          const userAns = seenQuestions[currentRoomId][subject][pKey][q.id];
-          if (userAns) {
-            sessionAttempted++;
-            if (userAns === q.correct) sessionScore++;
-          }
-        });
+      
+      // Self-heal history from answered questions!
+      const answeredIds = filteredQs.filter(q => seenQuestions[currentRoomId][subject][pKey][q.id]).map(q => q.id);
+      if (answeredIds.length > 0) {
+        sessionHistory = answeredIds;
+        currentHistoryIndex = sessionHistory.length - 1;
+        currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]);
+      } else {
+        sessionHistory = [];
+        currentHistoryIndex = -1;
+        currentQuestionObj = null;
       }
     }
+    
+    // Always calculate score and attempted dynamically from the absolute source of truth (seenQuestions)
+    calculateSessionStats();
     updateScoreUI();
     document.getElementById('quizArea').style.display = 'none';
     document.getElementById('quizSettingsArea').style.display = 'block';
