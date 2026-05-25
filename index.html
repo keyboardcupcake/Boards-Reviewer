@@ -5530,7 +5530,58 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
-    const select = document.getElementById('addTagSelect'); const tag = select.value === '__NEW__' ? document.getElementById('addTagNewInput').value.trim() : select.value; if(!tag) { customAlert("Wait", "Please provide a Tag/Group name."); return; } const text = document.getElementById('singleQTextEditor').innerHTML.trim(); if(!text || text === "<br>") { customAlert("Wait", "Question text cannot be empty."); return; } const ans = document.getElementById('singleAns').value.trim().toLowerCase(); if(!ans) { customAlert("Wait", "Please select a Correct Answer."); return; } const rationale = document.getElementById('singleRationaleEditor').innerHTML.trim(); const imgUrl = document.getElementById('singleImgUrl').value.trim(); const rationaleImgUrl = document.getElementById('singleRationaleImgUrl') ? document.getElementById('singleRationaleImgUrl').value.trim() : ""; const linkGroup = document.getElementById('singleLinkGroup').value.trim(); const optInputs = document.querySelectorAll('.single-opt-input'); let options = []; optInputs.forEach(input => { if (input.innerHTML.trim() && input.innerHTML.trim() !== "<br>") options.push({ letter: input.getAttribute('data-letter'), text: input.innerHTML.trim() }); }); if(options.length < 2) { customAlert("Wait", "Please fill out at least 2 options."); return; } const newQ = { id: "q_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5), text: text, options: options, correct: ans, tag: tag, rationale: rationale, imageUrl: imgUrl, rationaleImageUrl: rationaleImgUrl, linkGroup: linkGroup, displayItemNumber: 0 }; currentQuestions.push(newQ); updateItemNumbers(); saveToServer(() => { document.getElementById('addStatus').innerText = "Question added!"; document.getElementById('singleQTextEditor').innerHTML = ''; document.getElementById('singleRationaleEditor').innerHTML = ''; document.getElementById('singleImgUrl').value = ''; if(document.getElementById('singleRationaleImgUrl')) document.getElementById('singleRationaleImgUrl').value = ''; document.getElementById('singleLinkGroup').value = ''; document.querySelectorAll('.single-opt-input').forEach(i => i.innerHTML = ''); setTimeout(() => document.getElementById('addStatus').innerText = "", 3000); }); }
+    const select = document.getElementById('addTagSelect'); 
+    const tag = select.value === '__NEW__' ? document.getElementById('addTagNewInput').value.trim() : select.value; 
+    if(!tag) { customAlert("Wait", "Please provide a Tag/Group name."); return; } 
+    const text = document.getElementById('singleQTextEditor').innerHTML.trim(); 
+    if(!text || text === "<br>") { customAlert("Wait", "Question text cannot be empty."); return; } 
+    const ans = document.getElementById('singleAns').value.trim().toLowerCase(); 
+    if(!ans) { customAlert("Wait", "Please select a Correct Answer."); return; } 
+    const rationale = document.getElementById('singleRationaleEditor').innerHTML.trim(); 
+    const imgUrl = document.getElementById('singleImgUrl').value.trim(); 
+    const rationaleImgUrl = document.getElementById('singleRationaleImgUrl') ? document.getElementById('singleRationaleImgUrl').value.trim() : ""; 
+    const linkGroup = document.getElementById('singleLinkGroup').value.trim(); 
+    const optInputs = document.querySelectorAll('.single-opt-input'); 
+    let options = []; 
+    optInputs.forEach(input => { 
+      if (input.innerHTML.trim() && input.innerHTML.trim() !== "<br>") 
+        options.push({ letter: input.getAttribute('data-letter'), text: input.innerHTML.trim() }); 
+    }); 
+    if(options.length < 2) { customAlert("Wait", "Please fill out at least 2 options."); return; }
+    
+    let maxNum = 0;
+    currentQuestions.forEach(q => {
+      if ((q.tag || "Untagged") === tag) {
+        if (q.displayItemNumber > maxNum) maxNum = q.displayItemNumber;
+      }
+    });
+    
+    const newQ = { 
+      id: "q_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5), 
+      text: text, 
+      options: options, 
+      correct: ans, 
+      tag: tag, 
+      rationale: rationale, 
+      imageUrl: imgUrl, 
+      rationaleImageUrl: rationaleImgUrl, 
+      linkGroup: linkGroup, 
+      displayItemNumber: maxNum + 1 
+    }; 
+    
+    currentQuestions.push(newQ); 
+    updateItemNumbers(); 
+    saveToServer(() => { 
+      document.getElementById('addStatus').innerText = "Question added!"; 
+      document.getElementById('singleQTextEditor').innerHTML = ''; 
+      document.getElementById('singleRationaleEditor').innerHTML = ''; 
+      document.getElementById('singleImgUrl').value = ''; 
+      if(document.getElementById('singleRationaleImgUrl')) document.getElementById('singleRationaleImgUrl').value = ''; 
+      document.getElementById('singleLinkGroup').value = ''; 
+      document.querySelectorAll('.single-opt-input').forEach(i => i.innerHTML = ''); 
+      setTimeout(() => document.getElementById('addStatus').innerText = "", 3000); 
+    }); 
+  }
   function toggleBulkTutorial() { const el = document.getElementById('bulkTutorialContent'); const arrow = document.getElementById('bulkTutArrow'); if (el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▴'; } else { el.style.display = 'none'; arrow.innerText = '▾'; } }
 
   function toggleAiPromptSection() {
@@ -5586,8 +5637,21 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const rawData = convertHtmlToParsableText(htmlContent).trim();
     const ansKey = document.getElementById('keyInput').value.trim();
     if(!rawData || !ansKey) { customAlert("Wait", "Question text or answer key cannot be empty."); return; }
+    
+    let maxNum = 0;
+    currentQuestions.forEach(q => {
+      if ((q.tag || "Untagged") === tag) {
+        if (q.displayItemNumber > maxNum) maxNum = q.displayItemNumber;
+      }
+    });
+    
     const newQuestions = parseRawText(rawData, ansKey, tag);
     if(newQuestions.length === 0) { customAlert("Format Error", "Could not detect any valid questions. Please check the tutorial."); return; }
+    
+    newQuestions.forEach((q, idx) => {
+      q.displayItemNumber = maxNum + 1 + idx;
+    });
+    
     currentQuestions = currentQuestions.concat(newQuestions);
     updateItemNumbers();
     saveToServer(() => {
@@ -6054,7 +6118,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function triggerRenameTag() { const currentTag = document.getElementById('bankTagFilter').value; if (currentTag === "ALL") return; customPrompt("Rename Tag", `Enter new name for '${currentTag}':`, "text", (newTag) => { if(!newTag || newTag === currentTag) return; showLoader(true); const subject = document.getElementById('subjectSelect').value; google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { currentQuestions = res.questions; updateItemNumbers(); populateTagFilters(); document.getElementById('bankTagFilter').value = newTag; renderBank(); customAlert("Success", "Tag renamed successfully!"); } else customAlert("Error", res.msg); }).renameTagDB(currentRoomId, subject, currentTag, newTag, currentUser, getSessionToken()); }); }
   function startEditing(id) { editingQuestionId = id; renderBank(); }
   function cancelEditing() { editingQuestionId = null; renderBank(); }
-  function saveQuestionEdits(id) { const q = currentQuestions.find(x => x.id === id); if(!q) return; q.tag = document.getElementById(`edit_tag_${id}`).value; const newNum = parseInt(document.getElementById(`edit_num_${id}`).value); q.text = document.getElementById(`q_edit_${id}`).innerHTML; q.correct = document.getElementById(`edit_correct_${id}`).value; q.imageUrl = document.getElementById(`edit_img_${id}`).value.trim(); q.rationaleImageUrl = document.getElementById(`edit_rat_img_${id}`).value.trim(); q.linkGroup = document.getElementById(`edit_link_${id}`).value.trim(); q.rationale = document.getElementById(`rat_${id}`).innerHTML; q.options.forEach(o => { o.text = document.getElementById(`edit_opt_${o.letter}_${id}`).innerHTML; }); if(!isNaN(newNum) && newNum !== q.displayItemNumber && newNum >= 1) { const tag = q.tag; let tagQs = currentQuestions.filter(x => x.tag === tag); const localIdx = tagQs.findIndex(x => x.id === id); tagQs.splice(localIdx, 1); let targetLocalIdx = newNum - 1; if(targetLocalIdx > tagQs.length) targetLocalIdx = tagQs.length; tagQs.splice(targetLocalIdx, 0, q); let newCurrent = []; let tagCounter = 0; currentQuestions.forEach(x => { if(x.tag === tag) { newCurrent.push(tagQs[tagCounter]); tagCounter++; } else newCurrent.push(x); }); currentQuestions = newCurrent; } editingQuestionId = null; updateItemNumbers(); saveToServer(() => { renderBank(); }); }
+  function saveQuestionEdits(id) { const q = currentQuestions.find(x => x.id === id); if(!q) return; q.tag = document.getElementById(`edit_tag_${id}`).value; const newNum = parseInt(document.getElementById(`edit_num_${id}`).value); q.text = document.getElementById(`q_edit_${id}`).innerHTML; q.correct = document.getElementById(`edit_correct_${id}`).value; q.imageUrl = document.getElementById(`edit_img_${id}`).value.trim(); q.rationaleImageUrl = document.getElementById(`edit_rat_img_${id}`).value.trim(); q.linkGroup = document.getElementById(`edit_link_${id}`).value.trim(); q.rationale = document.getElementById(`rat_${id}`).innerHTML; q.options.forEach(o => { o.text = document.getElementById(`edit_opt_${o.letter}_${id}`).innerHTML; }); if(!isNaN(newNum) && newNum !== q.displayItemNumber && newNum >= 1) { const tag = q.tag; const oldNum = q.displayItemNumber; const targetQ = currentQuestions.find(x => (x.tag || "Untagged") === tag && x.displayItemNumber === newNum); if (targetQ) { targetQ.displayItemNumber = oldNum; q.displayItemNumber = newNum; } else { q.displayItemNumber = newNum; } } editingQuestionId = null; updateItemNumbers(); saveToServer(() => { renderBank(); }); }
   function triggerDelete(id) { customConfirm("Confirm Delete", "Delete this question permanently?", () => { currentQuestions = currentQuestions.filter(q => q.id !== id); updateItemNumbers(); renderBank(); saveToServer(); }); }
 
   function renderBank() {
