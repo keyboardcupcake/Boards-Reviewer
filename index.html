@@ -2915,13 +2915,39 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           if (roomDoc.exists) {
             const roomData = roomDoc.data();
             const permissions = roomData.permissions || {};
+            const lastActive = roomData.lastActive || {};
+            const privacy = roomData.privacy || {};
+            
+            const updatedPermissions = { ...permissions };
+            const updatedLastActive = { ...lastActive };
+            const updatedPrivacy = { ...privacy };
+            let modified = false;
+            
             if (permissions[oldLower]) {
               const role = permissions[oldLower];
-              const updatedPermissions = { ...permissions };
               delete updatedPermissions[oldLower];
               updatedPermissions[newLower] = role;
-              
-              batch.update(roomRef, { permissions: updatedPermissions });
+              modified = true;
+            }
+            if (lastActive[oldLower]) {
+              const ts = updatedLastActive[oldLower];
+              delete updatedLastActive[oldLower];
+              updatedLastActive[newLower] = ts;
+              modified = true;
+            }
+            if (privacy[oldLower]) {
+              const priv = updatedPrivacy[oldLower];
+              delete updatedPrivacy[oldLower];
+              updatedPrivacy[newLower] = priv;
+              modified = true;
+            }
+            
+            if (modified) {
+              batch.update(roomRef, {
+                permissions: updatedPermissions,
+                lastActive: updatedLastActive,
+                privacy: updatedPrivacy
+              });
               needsCommit = true;
             }
           }
@@ -6744,13 +6770,39 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
             if (roomDoc.exists) {
               const roomData = roomDoc.data();
               const permissions = roomData.permissions || {};
+              const lastActive = roomData.lastActive || {};
+              const privacy = roomData.privacy || {};
+              
+              const updatedPermissions = { ...permissions };
+              const updatedLastActive = { ...lastActive };
+              const updatedPrivacy = { ...privacy };
+              let modified = false;
+              
               if (permissions[oldLower]) {
                 const role = permissions[oldLower];
-                const updatedPermissions = { ...permissions };
                 delete updatedPermissions[oldLower];
                 updatedPermissions[newLower] = role;
-                
-                batch.update(roomRef, { permissions: updatedPermissions });
+                modified = true;
+              }
+              if (lastActive[oldLower]) {
+                const ts = updatedLastActive[oldLower];
+                delete updatedLastActive[oldLower];
+                updatedLastActive[newLower] = ts;
+                modified = true;
+              }
+              if (privacy[oldLower]) {
+                const priv = updatedPrivacy[oldLower];
+                delete updatedPrivacy[oldLower];
+                updatedPrivacy[newLower] = priv;
+                modified = true;
+              }
+              
+              if (modified) {
+                batch.update(roomRef, {
+                  permissions: updatedPermissions,
+                  lastActive: updatedLastActive,
+                  privacy: updatedPrivacy
+                });
               }
             }
           }
