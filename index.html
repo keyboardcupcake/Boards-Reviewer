@@ -4660,7 +4660,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         initSubjectMemory(subject); 
         updateItemNumbers(); 
         updateBadge(); 
-        populateTagFilters(); 
+        populateTagFilters(true); 
         handleTagSwitch(); 
         document.getElementById('quizArea').style.display = 'none'; 
         if(document.getElementById('bankTab').classList.contains('active')) renderBank(); 
@@ -4760,7 +4760,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     });
   }
   function updateBadge() { document.getElementById('statusBadge').innerText = currentQuestions.length + " Questions in Bank"; }
-  function populateTagFilters() { 
+  function populateTagFilters(resetSelection = false) { 
     try {
       const filterQuiz = document.getElementById('tagFilter'); 
       const filterBank = document.getElementById('bankTagFilter'); 
@@ -4797,13 +4797,13 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       filterQuiz.innerHTML += '<option value="ALL">All Groups Combined</option>';
       filterBank.innerHTML += '<option value="ALL">Filter: All Groups</option>';
       
-      if (currQuiz && currQuiz !== "ALL" && uniqueTags.includes(currQuiz)) {
+      if (!resetSelection && currQuiz && currQuiz !== "ALL" && uniqueTags.includes(currQuiz)) {
         filterQuiz.value = currQuiz;
       } else {
         filterQuiz.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
       }
       
-      if (currBank && currBank !== "ALL" && uniqueTags.includes(currBank)) {
+      if (!resetSelection && currBank && currBank !== "ALL" && uniqueTags.includes(currBank)) {
         filterBank.value = currBank;
       } else {
         filterBank.value = uniqueTags.length > 0 ? uniqueTags[0] : "ALL";
