@@ -6119,6 +6119,56 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function startEditing(id) { editingQuestionId = id; renderBank(); }
   function cancelEditing() { editingQuestionId = null; renderBank(); }
   function saveQuestionEdits(id) { const q = currentQuestions.find(x => x.id === id); if(!q) return; q.tag = document.getElementById(`edit_tag_${id}`).value; const newNum = parseInt(document.getElementById(`edit_num_${id}`).value); q.text = document.getElementById(`q_edit_${id}`).innerHTML; q.correct = document.getElementById(`edit_correct_${id}`).value; q.imageUrl = document.getElementById(`edit_img_${id}`).value.trim(); q.rationaleImageUrl = document.getElementById(`edit_rat_img_${id}`).value.trim(); q.linkGroup = document.getElementById(`edit_link_${id}`).value.trim(); q.rationale = document.getElementById(`rat_${id}`).innerHTML; q.options.forEach(o => { o.text = document.getElementById(`edit_opt_${o.letter}_${id}`).innerHTML; }); if(!isNaN(newNum) && newNum !== q.displayItemNumber && newNum >= 1) { const tag = q.tag; const oldNum = q.displayItemNumber; const targetQ = currentQuestions.find(x => (x.tag || "Untagged") === tag && x.displayItemNumber === newNum); if (targetQ) { targetQ.displayItemNumber = oldNum; q.displayItemNumber = newNum; } else { q.displayItemNumber = newNum; } } editingQuestionId = null; updateItemNumbers(); saveToServer(() => { renderBank(); }); }
+  function saveCurrentEditedStateToObj(qId) {
+    const q = currentQuestions.find(x => x.id === qId);
+    if (!q) return;
+    const tagEl = document.getElementById(`edit_tag_${qId}`);
+    if (tagEl) q.tag = tagEl.value;
+    const numEl = document.getElementById(`edit_num_${qId}`);
+    if (numEl) {
+      const val = parseInt(numEl.value);
+      if (!isNaN(val) && val >= 1) q.displayItemNumber = val;
+    }
+    const textEl = document.getElementById(`q_edit_${qId}`);
+    if (textEl) q.text = textEl.innerHTML;
+    const correctEl = document.getElementById(`edit_correct_${qId}`);
+    if (correctEl) q.correct = correctEl.value;
+    const imgEl = document.getElementById(`edit_img_${qId}`);
+    if (imgEl) q.imageUrl = imgEl.value.trim();
+    const ratImgEl = document.getElementById(`edit_rat_img_${qId}`);
+    if (ratImgEl) q.rationaleImageUrl = ratImgEl.value.trim();
+    const linkEl = document.getElementById(`edit_link_${qId}`);
+    if (linkEl) q.linkGroup = linkEl.value.trim();
+    const ratEl = document.getElementById(`rat_${qId}`);
+    if (ratEl) q.rationale = ratEl.innerHTML;
+    q.options.forEach(o => {
+      const optEl = document.getElementById(`edit_opt_${o.letter}_${qId}`);
+      if (optEl) o.text = optEl.innerHTML;
+    });
+  }
+  function deleteOptionFromEdit(qId, letter) {
+    saveCurrentEditedStateToObj(qId);
+    const q = currentQuestions.find(x => x.id === qId);
+    if (!q) return;
+    q.options = q.options.filter(o => o.letter !== letter);
+    q.options.forEach((o, index) => {
+      o.letter = String.fromCharCode(97 + index);
+    });
+    const validLetters = q.options.map(o => o.letter);
+    if (!validLetters.includes(q.correct)) {
+      q.correct = validLetters[0] || 'a';
+    }
+    renderBank();
+  }
+  function addOptionToEdit(qId) {
+    saveCurrentEditedStateToObj(qId);
+    const q = currentQuestions.find(x => x.id === qId);
+    if (!q) return;
+    const nextIndex = q.options.length;
+    const nextLetter = String.fromCharCode(97 + nextIndex);
+    q.options.push({ letter: nextLetter, text: "" });
+    renderBank();
+  }
   function triggerDelete(id) { customConfirm("Confirm Delete", "Delete this question permanently?", () => { currentQuestions = currentQuestions.filter(q => q.id !== id); updateItemNumbers(); renderBank(); saveToServer(); }); }
 
   function renderBank() {
@@ -6146,7 +6196,13 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           const div = document.createElement('div'); div.className = 'bank-card';
           let contentHTML = ""; let actionsHTML = ""; let bulkCheckHTML = hasRoomEditAccess ? `<input type="checkbox" class="bulk-checkbox" value="${q.id}" onchange="handleBulkCheck(this)">` : "";
           if(hasRoomEditAccess && editingQuestionId === q.id) {
-             let editableOptHTML = q.options.map(o => `<div style="display:flex; align-items:center; gap:8px; margin-top: 6px;"><b style="color:var(--text); width: 20px;">${o.letter.toUpperCase()})</b><div id="edit_opt_${o.letter}_${q.id}" contenteditable="true" style="flex:1; padding:8px 12px; margin:0; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); min-height: 20px;">${formatText(o.text)}</div></div>`).join('');
+             let editableOptHTML = q.options.map((o, idx) => {
+               const deleteBtn = idx >= 2 
+                 ? `<button class="btn-danger btn-small" style="padding: 10px; margin: 0; flex-shrink: 0;" onclick="deleteOptionFromEdit('${q.id}', '${o.letter}')" title="Delete Option">🗑️</button>` 
+                 : '';
+               return `<div style="display:flex; align-items:center; gap:8px; margin-top: 6px;"><b style="color:var(--text); width: 20px;">${o.letter.toUpperCase()})</b><div id="edit_opt_${o.letter}_${q.id}" contenteditable="true" style="flex:1; padding:8px 12px; margin:0; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); min-height: 20px;">${formatText(o.text)}</div>${deleteBtn}</div>`;
+             }).join('');
+             editableOptHTML += `<button class="btn-outline btn-small" style="margin-top: 10px; margin-bottom: 5px; display: block;" onclick="addOptionToEdit('${q.id}')">+ Add Option</button>`;
              let ansSelectHtml = q.options.map(o => `<option value="${o.letter}" ${q.correct === o.letter ? 'selected' : ''}>${o.letter.toUpperCase()}</option>`).join('');
              let tagSelectHtml = uniqueTags.map(t => `<option value="${t}" ${q.tag === t ? 'selected' : ''}>${t}</option>`).join('');
              contentHTML = `<div style="width: 100%;"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;"><select id="edit_tag_${q.id}" style="width: auto; padding: 4px 8px; font-size:12px; font-weight:800; border-radius:6px; border:1px solid var(--border); outline:none;">${tagSelectHtml}</select><div style="display:flex; align-items:center; gap:6px;"><span style="font-weight:800; color:var(--text-light); font-size:14px;">Item</span><input type="number" id="edit_num_${q.id}" value="${q.displayItemNumber}" style="width:50px; padding:4px; text-align:center; font-weight:bold; border-radius:6px; border:1px solid var(--border);"></div></div><div style="border: 2px solid var(--primary); border-radius: 8px; overflow:hidden; margin-bottom: 10px;">${getToolbarHTML('q_edit_' + q.id)}<div id="q_edit_${q.id}" contenteditable="true" style="min-height: 80px; padding: 10px; background: var(--input-bg); outline:none;">${formatText(q.text)}</div></div>${editableOptHTML}</div>`;
