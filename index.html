@@ -1976,33 +1976,7 @@ const backend = {
         for (let subject in progressData[rId]) {
           const clientSubject = progressData[rId][subject];
           const docId = `${rId}___${subject}`;
-          const docRef = progressRef.doc(docId);
-          const docSnap = await docRef.get();
-          
-          let serverSubject = docSnap.exists ? docSnap.data() : { bookmarks: [], mistakes: {} };
-          
-          const bMap = {};
-          if (serverSubject.bookmarks) serverSubject.bookmarks.forEach(id => { bMap[id] = true; });
-          if (clientSubject.bookmarks) clientSubject.bookmarks.forEach(id => { bMap[id] = true; });
-          serverSubject.bookmarks = Object.keys(bMap);
-          
-          if (!serverSubject.mistakes) serverSubject.mistakes = {};
-          if (clientSubject.mistakes) {
-            for (let qId in clientSubject.mistakes) {
-              serverSubject.mistakes[qId] = clientSubject.mistakes[qId];
-            }
-          }
-          
-          for (let key in clientSubject) {
-            if (key === 'bookmarks' || key === 'mistakes') continue;
-            if (typeof clientSubject[key] === 'object' && clientSubject[key] !== null) {
-              if (!serverSubject[key]) serverSubject[key] = {};
-              for (let qId in clientSubject[key]) {
-                serverSubject[key][qId] = clientSubject[key][qId];
-              }
-            }
-          }
-          await docRef.set(serverSubject);
+          await progressRef.doc(docId).set(clientSubject || {});
         }
       }
       
@@ -4581,7 +4555,25 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       alert("Server Error: " + err.message); 
     }).loadQuestionsJSON(currentRoomId, subject, currentUser, getSessionToken(), getRoomPassword(currentRoomId)); 
   }
-  function getProgressKey() { const mode = document.querySelector('input[name="mode"]:checked').value; const studyOrder = document.querySelector('input[name="studyOrder"]:checked').value; const tag = document.getElementById('tagFilter').value; return `${mode}_${studyOrder}_${tag}`; }
+  function getSafeMode() {
+    const el = document.querySelector('input[name="mode"]:checked');
+    return el ? el.value : "session";
+  }
+  function getSafeStudyOrder() {
+    const el = document.querySelector('input[name="studyOrder"]:checked');
+    return el ? el.value : "random";
+  }
+  function getSafeSubject() {
+    const el = document.getElementById('subjectSelect');
+    return el && el.value ? el.value : "Psychological Assessment";
+  }
+  function getProgressKey() {
+    const mode = getSafeMode();
+    const studyOrder = getSafeStudyOrder();
+    const tagEl = document.getElementById('tagFilter');
+    const tag = tagEl ? tagEl.value : "ALL";
+    return `${mode}_${studyOrder}_${tag}`;
+  }
   function initSubjectMemory(subject) { 
     if(!seenQuestions) seenQuestions = {}; 
     if(!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {}; 
@@ -5065,14 +5057,14 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function restartSession() { 
     customConfirm("Reset Group Progress", "Are you sure you want to reset your score and progress for this group and mode?", () => { 
-      const subject = document.getElementById('subjectSelect').value; 
+      const subject = getSafeSubject(); 
       
       if (!seenQuestions) seenQuestions = {};
       if (!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {};
       if (!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {};
       
       const pKey = initSubjectMemory(subject); 
-      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const mode = getSafeMode();
       if (mode === 'mistakes') {
         seenQuestions[currentRoomId][subject].mistakes = {};
       } else {
@@ -5117,7 +5109,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   function resetAllGroups() { 
     customConfirm("Reset All Progress", "Are you sure you want to reset ALL progress for this subject?", () => { 
-      const subject = document.getElementById('subjectSelect').value; 
+      const subject = getSafeSubject(); 
       
       if (!seenQuestions) seenQuestions = {};
       if (!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {};
