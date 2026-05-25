@@ -3404,7 +3404,16 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           clearTimeout(cloudSyncTimeout);
           cloudSyncTimeout = setTimeout(() => {
               const token = localStorage.getItem('psych_session_token') || "";
-              google.script.run.syncUserProgress(currentUser, seenQuestions, token);
+              google.script.run.withSuccessHandler(res => {
+                  if (res && res.success) {
+                      seenQuestions = res.progress || {};
+                      localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+                  } else if (res && !res.success && res.reason === "session_conflict") {
+                      handleSessionConflict();
+                  }
+              }).withFailureHandler(err => {
+                  console.warn("Background cloud sync failed:", err);
+              }).syncUserProgress(currentUser, seenQuestions, token);
           }, 1000);
       }
   }
@@ -5057,6 +5066,11 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function restartSession() { 
     customConfirm("Reset Group Progress", "Are you sure you want to reset your score and progress for this group and mode?", () => { 
       const subject = document.getElementById('subjectSelect').value; 
+      
+      if (!seenQuestions) seenQuestions = {};
+      if (!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {};
+      if (!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {};
+      
       const pKey = initSubjectMemory(subject); 
       const mode = document.querySelector('input[name="mode"]:checked').value;
       if (mode === 'mistakes') {
@@ -5064,6 +5078,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       } else {
         seenQuestions[currentRoomId][subject][pKey] = {}; 
       }
+      
+      delete seenQuestions[currentRoomId][subject][`state_${pKey}`];
       
       sessionScore = 0;
       sessionAttempted = 0;
@@ -5075,15 +5091,38 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       
       endlessAnswers = {};
       clearSessionState(); 
-      syncToCloud(); 
-      handleTagSwitch(); 
-      customAlert("Progress Reset", "Score and progress have been reset."); 
+      localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+      
+      showLoader(true);
+      const token = localStorage.getItem('psych_session_token') || "";
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        if (res && res.success) {
+          seenQuestions = res.progress || {};
+          localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+          handleTagSwitch(); 
+          customAlert("Progress Reset", "Score and progress have been reset successfully in the cloud!"); 
+        } else if (res && !res.success && res.reason === "session_conflict") {
+          handleSessionConflict();
+        } else {
+          customAlert("Sync Error", "Progress was reset locally but could not be synchronized to the cloud.");
+          handleTagSwitch();
+        }
+      }).withFailureHandler(err => {
+        showLoader(false);
+        customAlert("Connection Error", "Could not sync progress reset to the cloud: " + err.message);
+        handleTagSwitch();
+      }).syncUserProgress(currentUser, seenQuestions, token);
     }); 
   }
   function resetAllGroups() { 
     customConfirm("Reset All Progress", "Are you sure you want to reset ALL progress for this subject?", () => { 
       const subject = document.getElementById('subjectSelect').value; 
-      const b = seenQuestions[currentRoomId][subject].bookmarks || []; 
+      
+      if (!seenQuestions) seenQuestions = {};
+      if (!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {};
+      
+      const b = (seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject].bookmarks) || []; 
       seenQuestions[currentRoomId][subject] = { bookmarks: b, mistakes: {} }; 
       endlessAnswers = {};
       
@@ -5098,9 +5137,28 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       Object.keys(localStorage).forEach(key => { 
         if (key.startsWith(`psych_state_${currentRoomId}_${subject}`)) localStorage.removeItem(key); 
       }); 
-      syncToCloud(); 
-      handleTagSwitch(); 
-      customAlert("Progress Reset", "All score and progress for this subject have been reset. Your pins were kept safe."); 
+      localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+      
+      showLoader(true);
+      const token = localStorage.getItem('psych_session_token') || "";
+      google.script.run.withSuccessHandler(res => {
+        showLoader(false);
+        if (res && res.success) {
+          seenQuestions = res.progress || {};
+          localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+          handleTagSwitch(); 
+          customAlert("Progress Reset", "All score and progress for this subject have been reset in the cloud. Your pins were kept safe."); 
+        } else if (res && !res.success && res.reason === "session_conflict") {
+          handleSessionConflict();
+        } else {
+          customAlert("Sync Error", "Progress was reset locally but could not be synchronized to the cloud.");
+          handleTagSwitch();
+        }
+      }).withFailureHandler(err => {
+        showLoader(false);
+        customAlert("Connection Error", "Could not sync progress reset to the cloud: " + err.message);
+        handleTagSwitch();
+      }).syncUserProgress(currentUser, seenQuestions, token);
     }); 
   }
 
