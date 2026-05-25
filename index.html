@@ -2745,7 +2745,7 @@ window.google = {
 };
 
 let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessionHistory = []; let currentHistoryIndex = -1; let currentQuestionObj = null; let seenQuestions = {}; 
-  let endlessAnswers = {}; let cloudSyncTimeout = null; let currentRoomListenerUnsubscribe = null; let activityPingInterval = null;
+  let endlessAnswers = {}; let cloudSyncTimeout = null; let currentRoomListenerUnsubscribe = null; let activityPingInterval = null; let activeSessionListenerUnsubscribe = null;
   let autoStartSessionFlag = false;
   let sessionScore = 0; let sessionAttempted = 0; let sessionTotalSeconds = 0; 
   let currentUser = ''; let currentUserJoinedRooms = []; let authMode = 'login'; 
@@ -2959,6 +2959,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
                 });
                 
                 finalizeDashboardLoad();
+                startSessionValidationListener();
               } else if (res.reason === "session_conflict") {
                 handleSessionConflict(() => {
                   // If logged out, stop loading dashboard
@@ -3171,6 +3172,40 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       }).loginUser(user, pass);
     }
   }
+  
+  function startSessionValidationListener() {
+    if (activeSessionListenerUnsubscribe) {
+      activeSessionListenerUnsubscribe();
+      activeSessionListenerUnsubscribe = null;
+    }
+    
+    const user = auth.currentUser;
+    if (!user || !currentUser || currentUser === 'Guest' || currentUser.toLowerCase() === 'admin') return;
+    
+    const token = localStorage.getItem('psych_session_token') || "";
+    if (!token) return;
+    
+    try {
+      activeSessionListenerUnsubscribe = db.collection('users').doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+          const serverToken = doc.data().currentSessionToken;
+          if (serverToken && serverToken !== token) {
+            console.warn("Session conflict detected in real-time. Automatically logging out.");
+            if (activeSessionListenerUnsubscribe) {
+              activeSessionListenerUnsubscribe();
+              activeSessionListenerUnsubscribe = null;
+            }
+            handleSessionConflict();
+          }
+        }
+      }, err => {
+        console.warn("Session listener error:", err);
+      });
+    } catch(snapshotErr) {
+      console.warn("Session snapshot attachment failed:", snapshotErr);
+    }
+  }
+
   function finishLogin(username, cloudProgress, joinedRooms, sessionToken) { 
     currentUser = username; 
     isAdmin = (username.toLowerCase() === 'admin'); 
@@ -3192,11 +3227,16 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     google.script.run.syncUserProgress(currentUser, seenQuestions, token);
     document.getElementById('authModalOverlay').style.display = 'none'; 
     fetchRoomsAndLoadDashboard(); 
+    startSessionValidationListener();
   }
   function logoutUser() { 
     if (currentRoomListenerUnsubscribe) {
       currentRoomListenerUnsubscribe();
       currentRoomListenerUnsubscribe = null;
+    }
+    if (activeSessionListenerUnsubscribe) {
+      activeSessionListenerUnsubscribe();
+      activeSessionListenerUnsubscribe = null;
     }
     if (activityPingInterval) {
       clearInterval(activityPingInterval);
