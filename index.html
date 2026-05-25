@@ -4712,21 +4712,21 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const subject = document.getElementById('subjectSelect').value; showLoader(true); google.script.run.withSuccessHandler(res => { updateBadge(); populateTagFilters(); populateAddTagFilters(); showLoader(false); if(callback) callback(); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to save to database."); }).saveQuestionsJSON(currentRoomId, subject, currentQuestions, currentUser, getSessionToken());
   }
   function saveSessionState() {
-    const subject = document.getElementById('subjectSelect').value;
+    const subject = getSafeSubject();
     const pKey = getProgressKey();
     const state = { pendingQueue, sessionHistory, currentHistoryIndex, sessionScore, sessionAttempted, sessionTotalSeconds };
     
-    if (seenQuestions && seenQuestions[currentRoomId]) {
-      if (!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {};
-      seenQuestions[currentRoomId][subject][`state_${pKey}`] = state;
-    }
+    if (!seenQuestions) seenQuestions = {};
+    if (!seenQuestions[currentRoomId]) seenQuestions[currentRoomId] = {};
+    if (!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {};
+    seenQuestions[currentRoomId][subject][`state_${pKey}`] = state;
     
     localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, JSON.stringify(state));
     syncToCloud();
   }
   
   function clearSessionState() {
-    const subject = document.getElementById('subjectSelect').value;
+    const subject = getSafeSubject();
     const pKey = getProgressKey();
     
     if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject]) {
@@ -4744,9 +4744,18 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const pKey = initSubjectMemory(subject);
     
     let savedState = null;
-    if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject][`state_${pKey}`]) {
-      savedState = JSON.stringify(seenQuestions[currentRoomId][subject][`state_${pKey}`]);
+    if (currentUser && currentUser !== 'Guest' && currentUser.toLowerCase() !== 'admin') {
+      // Cloud-synced account: ONLY load state from seenQuestions (synced to Firestore) to prevent fallback cache bugs!
+      if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject][`state_${pKey}`]) {
+        savedState = JSON.stringify(seenQuestions[currentRoomId][subject][`state_${pKey}`]);
+        // Sync local storage as well to keep them aligned
+        localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, savedState);
+      } else {
+        // No active cloud session found (e.g. progress was reset/wiped): purge local storage cache!
+        localStorage.removeItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
+      }
     } else {
+      // Local/Guest account: fallback to local storage
       savedState = localStorage.getItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
     }
     
