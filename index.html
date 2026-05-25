@@ -5201,9 +5201,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     if (titleEl) titleEl.innerText = activeSubject;
     const editBtn = document.getElementById('editRoomInfoBtn');
     if (editBtn) editBtn.style.display = 'none'; 
-    if(!currentQuestionObj && currentHistoryIndex !== -1) { 
-      handleTagSwitch(); 
-    } 
+    // Always load the latest session state from seenQuestions (synced from Firestore) on start/resume!
+    handleTagSwitch(); 
     if (currentHistoryIndex === -1) { 
       endlessAnswers = {};
       const subject = document.getElementById('subjectSelect').value; 
