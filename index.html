@@ -5159,12 +5159,28 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const pctAnswered = totalTagQs > 0 ? Math.round((answeredTagQs / totalTagQs) * 100) : 0;
       const pctCorrect = answeredTagQs > 0 ? Math.round((correctTagQs / answeredTagQs) * 100) : 0;
       
-      const isLong = tag.length > 18;
-      const tagTitleSpan = isLong 
-        ? `<span style="vertical-align: middle; display: inline-block;">🏷️&nbsp;</span><div style="overflow: hidden; white-space: nowrap; max-width: 130px; display: inline-block; text-align: left; vertical-align: middle;">
-             <span style="display: inline-block; white-space: nowrap; animation: marquee-continuous 4.5s linear infinite;">${tag}</span>
-           </div>`
-        : `<span style="text-align: left; max-width: 155px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; display: inline-block;">🏷️ ${tag}</span>`;
+      const textWidth = Math.round(tag.length * 7.5);
+      const scrollDist = textWidth - 130;
+      let tagTitleSpan = "";
+      if (scrollDist > 0 && tag.length > 18) {
+        const animId = `mq_${Math.random().toString(36).substr(2, 9)}`;
+        const duration = Math.max(2.5, Math.round((scrollDist / 35) * 10) / 10);
+        tagTitleSpan = `
+          <span style="vertical-align: middle; display: inline-block;">🏷️&nbsp;</span>
+          <div style="overflow: hidden; white-space: nowrap; max-width: 130px; display: inline-block; text-align: left; vertical-align: middle;">
+            <style>
+              @keyframes ${animId} {
+                0%, 15% { transform: translateX(0); }
+                45%, 55% { transform: translateX(-${scrollDist}px); }
+                85%, 100% { transform: translateX(0); }
+              }
+            </style>
+            <span style="display: inline-block; white-space: nowrap; animation: ${animId} ${duration * 2}s ease-in-out infinite;">${tag}</span>
+          </div>
+        `.replace(/\n/g, '');
+      } else {
+        tagTitleSpan = `<span style="text-align: left; max-width: 155px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; display: inline-block;">🏷️ ${tag}</span>`;
+      }
 
       tagStatsHTML += `
         <div style="margin-bottom: 12px; background: rgba(0, 0, 0, 0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border); text-align: left;">
