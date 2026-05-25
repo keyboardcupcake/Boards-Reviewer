@@ -36,6 +36,10 @@
     .top-control-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;} .header-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; } .user-profile-btn { display: flex; align-items: center; gap: 8px; background: var(--surface-alt); padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; color: var(--text); } .user-profile-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
     .color-picker { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;} .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; } .color-swatch:hover { transform: scale(1.15); } .color-swatch.active { border-color: var(--text); transform: scale(1.15); }
     .switch-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: center;} .switch-container { display: flex; align-items: center; gap: 6px; } .switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; } .switch input { opacity: 0; width: 0; height: 0; } .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 34px; border: 1px solid var(--text-light); } .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; } input:checked + .slider { background-color: var(--primary); border-color: var(--primary); } input:checked + .slider:before { transform: translateX(16px); }
+    @keyframes marquee-slide {
+      0%, 15% { transform: translateX(0); }
+      85%, 100% { transform: translateX(calc(-100% + 155px)); }
+    }
     
     /* Premium Custom Radio Buttons (Resolves Bleeding/Contrast) */
     input[type="radio"] {
@@ -903,7 +907,7 @@
         <li><b>✍️ Single Question Form:</b> Create questions with detailed multi-choice options, correct answers, explanation rationales, and image links.</li>
         <li><b>📥 Bulk Add Importer:</b> Paste plain formatted question blocks along with an answer key list to import complete databases in one click.</li>
         <li><b>👥 Collaboration Roles:</b> Define who can contribute or edit questions inside your room through Viewer, Editor, and Admin permissions.</li>
-        <li><b>🖨️ Clean Mock Exams:</b> Export print-optimized monochrome exams directly to Google Docs. <i>⚠️ NOTE: Generated Docs are auto-deleted in 24 hours. Select File > 'Make a copy' to save permanently!</i></li>
+        <li><b>🖨️ Clean Mock Exams:</b> Export print-optimized monochrome exams directly as DOCX files for offline editing, sharing, and printing.</li>
       </ul>
     </div>
 
@@ -4969,7 +4973,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       let avg = Math.round(sessionTotalSeconds / sessionAttempted);
       let m = String(Math.floor(avg / 60)).padStart(2, '0');
       let s = String(avg % 60).padStart(2, '0');
-      currentSpeedText = `${m}:${s} / q`;
+      currentSpeedText = `${m}:${s} m / q`;
     }
     
     let globalSpeedText = "N/A";
@@ -4977,7 +4981,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       let avgAll = Math.round(totalTimeAll / totalAttemptedAll);
       let mall = String(Math.floor(avgAll / 60)).padStart(2, '0');
       let sall = String(avgAll % 60).padStart(2, '0');
-      globalSpeedText = `${mall}:${sall} / q`;
+      globalSpeedText = `${mall}:${sall} m / q`;
     }
     
     let activeScoreText = "N/A";
@@ -5007,15 +5011,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const pctCorrectAll = answeredAllQs > 0 ? Math.round((correctAllQs / answeredAllQs) * 100) : 0;
     
     const allGroupsStatsHTML = `
-      <div style="margin-bottom: 12px; background: rgba(var(--primary-rgb, 225, 29, 72), 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--primary);">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: var(--primary); margin-bottom: 6px;">
+      <div style="margin-bottom: 12px; background: rgba(var(--primary-rgb, 225, 29, 72), 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--primary); text-align: left;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: var(--primary); margin-bottom: 6px; align-items: center; text-align: left;">
           <span>🌐 All Groups Combined</span>
           <span style="font-size: 12px; color: var(--text-light);">${answeredAllQs} / ${totalAllQs} Answered</span>
         </div>
         <div style="background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 8px; width: 100%;">
           <div style="background: var(--primary); width: ${pctAnsweredAll}%; height: 100%; border-radius: 6px; transition: width 0.3s ease;"></div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light);">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light); text-align: left;">
           <span>Answered: ${pctAnsweredAll}%</span>
           <span>Accuracy: ${pctCorrectAll}% (${correctAllQs} correct)</span>
         </div>
@@ -5061,16 +5065,24 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       });
       const pctAnswered = totalTagQs > 0 ? Math.round((answeredTagQs / totalTagQs) * 100) : 0;
       const pctCorrect = answeredTagQs > 0 ? Math.round((correctTagQs / answeredTagQs) * 100) : 0;
+      
+      const isLong = tag.length > 18;
+      const tagTitleSpan = isLong 
+        ? `<div style="overflow: hidden; white-space: nowrap; max-width: 155px; display: inline-block; text-align: left; vertical-align: middle;">
+             <span style="display: inline-block; white-space: nowrap; animation: marquee-slide 8s linear infinite alternate; animation-delay: 1.5s;">🏷️ ${tag}</span>
+           </div>`
+        : `<span style="text-align: left; max-width: 155px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; display: inline-block;">🏷️ ${tag}</span>`;
+
       tagStatsHTML += `
-        <div style="margin-bottom: 12px; background: rgba(0, 0, 0, 0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: var(--text); margin-bottom: 6px;">
-            <span>🏷️ ${tag}</span>
-            <span style="font-size: 12px; color: var(--text-light);">${answeredTagQs} / ${totalTagQs} Answered</span>
+        <div style="margin-bottom: 12px; background: rgba(0, 0, 0, 0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border); text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: var(--text); margin-bottom: 6px; align-items: center; text-align: left;">
+            ${tagTitleSpan}
+            <span style="font-size: 12px; color: var(--text-light); white-space: nowrap; flex-shrink: 0; margin-left: 8px;">${answeredTagQs} / ${totalTagQs} Answered</span>
           </div>
           <div style="background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 8px; width: 100%;">
             <div style="background: var(--primary); width: ${pctAnswered}%; height: 100%; border-radius: 6px; transition: width 0.3s ease;"></div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light);">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light); text-align: left;">
             <span>Answered: ${pctAnswered}%</span>
             <span>Accuracy: ${pctCorrect}% (${correctTagQs} correct)</span>
           </div>
