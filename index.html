@@ -6491,42 +6491,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
 
     try {
-      if (tempOtpRequest.actionType === 'Username') {
-        const newUsername = tempOtpRequest.targetValue;
-        const newLower = newUsername.toLowerCase();
-        const oldLower = currentUser.toLowerCase();
-
-        const batch = db.batch();
-        batch.delete(db.collection('usernames').doc(oldLower));
-        batch.set(db.collection('usernames').doc(newLower), {
-          uid: user.uid,
-          email: user.email,
-          username: newUsername
-        });
-        batch.update(db.collection('users').doc(user.uid), {
-          username: newUsername
-        });
-        
-        await batch.commit();
-        
-        currentUser = newUsername;
-        if (localStorage.getItem('psych_current_user')) {
-          localStorage.setItem('psych_current_user', newUsername);
-        } else {
-          sessionStorage.setItem('psych_current_user', newUsername);
-        }
-        
-        document.getElementById('topBarUsername').innerText = newUsername;
-        document.getElementById('profileNameDisplay').innerText = newUsername;
-        const profileBtn = document.getElementById('circularProfileBtn');
-        if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
-
-        document.getElementById('settingsUsernameInput').value = '';
-        showLoader(false);
-        customAlert("Success", "Username updated successfully to: " + newUsername);
-        closeOtpModal();
-
-      } else if (tempOtpRequest.actionType === 'Email') {
+      if (tempOtpRequest.actionType === 'Email') {
         const newEmail = tempOtpRequest.targetValue;
         
         const executeEmailUpdate = async (reauthCred) => {
@@ -6677,16 +6642,83 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         customAlert("Error", "Username already exists!");
         return;
       }
-
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      showLoader(false);
       
-      google.script.run.withSuccessHandler(res => {
-        showLoader(false);
-        openOtpModal(user.email, 'Username', newUsername, otp, null);
-      }).withFailureHandler(err => {
-        showLoader(false);
-        openOtpModal(user.email, 'Username', newUsername, otp, null);
-      }).sendOtpEmail(user.email, otp, 'Username', newUsername);
+      customPrompt("Confirm Username Change", "Enter your current password to confirm changing your username to '" + newUsername + "':", "password", async (password) => {
+        if (password === null) return;
+        if (password.trim() === '') {
+          customAlert("Error", "Password cannot be empty.");
+          return;
+        }
+        
+        showLoader(true);
+        try {
+          const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+          await user.reauthenticateWithCredential(credential);
+          
+          const oldLower = currentUser.toLowerCase();
+          const batch = db.batch();
+          
+          const createdRoomsSnap = await db.collection('rooms').where('creator', '==', currentUser).get();
+          createdRoomsSnap.forEach(doc => {
+            batch.update(doc.ref, { creator: newUsername });
+          });
+          
+          const userDocSnap = await db.collection('users').doc(user.uid).get();
+          const joinedRooms = (userDocSnap.exists ? userDocSnap.data().joinedRooms : []) || [];
+          
+          for (const roomId of joinedRooms) {
+            const roomRef = db.collection('rooms').doc(roomId);
+            const roomDoc = await roomRef.get();
+            if (roomDoc.exists) {
+              const roomData = roomDoc.data();
+              const permissions = roomData.permissions || {};
+              if (permissions[oldLower]) {
+                const role = permissions[oldLower];
+                const updatedPermissions = { ...permissions };
+                delete updatedPermissions[oldLower];
+                updatedPermissions[newLower] = role;
+                
+                batch.update(roomRef, { permissions: updatedPermissions });
+              }
+            }
+          }
+          
+          batch.delete(db.collection('usernames').doc(oldLower));
+          batch.set(db.collection('usernames').doc(newLower), {
+            uid: user.uid,
+            email: user.email,
+            username: newUsername
+          });
+          batch.update(db.collection('users').doc(user.uid), {
+            username: newUsername
+          });
+          
+          await batch.commit();
+          
+          currentUser = newUsername;
+          if (localStorage.getItem('psych_current_user')) {
+            localStorage.setItem('psych_current_user', newUsername);
+          } else {
+            sessionStorage.setItem('psych_current_user', newUsername);
+          }
+          
+          document.getElementById('topBarUsername').innerText = newUsername;
+          document.getElementById('profileNameDisplay').innerText = newUsername;
+          const profileBtn = document.getElementById('circularProfileBtn');
+          if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
+          
+          document.getElementById('settingsUsernameInput').value = '';
+          showLoader(false);
+          customAlert("Success", "Username updated successfully to: " + newUsername);
+          
+          fetchRoomsAndLoadDashboard();
+          
+        } catch (reauthErr) {
+          showLoader(false);
+          customAlert("Error", "Authentication failed: " + reauthErr.message);
+        }
+      });
       
     } catch (err) {
       showLoader(false);
