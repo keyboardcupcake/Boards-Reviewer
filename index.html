@@ -2478,16 +2478,59 @@ const backend = {
   async getAdminPanelData(adminUser, sessionToken) {
     if (adminUser.toLowerCase() !== 'admin') return { success: false, msg: "Unauthorized" };
     
-    const usersSnap = await db.collection('users').get();
-    let users = {};
-    usersSnap.forEach(doc => {
-      const data = doc.data();
-      users[data.username || doc.id] = {
-        email: data.email || "",
-        joinedRooms: data.joinedRooms || []
-      };
-    });
-    return { success: true, users: users };
+    try {
+      const roomsSnap = await db.collection('rooms').get();
+      let roomsPrivacy = {};
+      let roomsActive = {};
+      let roomsName = {};
+      roomsSnap.forEach(doc => {
+        const data = doc.data();
+        roomsPrivacy[doc.id] = data.privacy || {};
+        roomsActive[doc.id] = data.lastActive || {};
+        roomsName[doc.id] = data.name || doc.id;
+      });
+      
+      const usersSnap = await db.collection('users').get();
+      let users = {};
+      usersSnap.forEach(doc => {
+        const data = doc.data();
+        const username = data.username || doc.id;
+        const lowerUser = username.toLowerCase();
+        
+        let joinedRoomDetails = [];
+        let overallLastActive = null;
+        
+        (data.joinedRooms || []).forEach(roomId => {
+          const roomName = roomsName[roomId] || roomId;
+          const isPrivateInRoom = !!(roomsPrivacy[roomId] && roomsPrivacy[roomId][lowerUser]);
+          const lastActiveInRoom = (roomsActive[roomId] && roomsActive[roomId][lowerUser]) || null;
+          
+          if (lastActiveInRoom) {
+            if (!overallLastActive || lastActiveInRoom > overallLastActive) {
+              overallLastActive = lastActiveInRoom;
+            }
+          }
+          
+          joinedRoomDetails.push({
+            roomId: roomId,
+            roomName: roomName,
+            isPrivate: isPrivateInRoom,
+            lastActive: lastActiveInRoom
+          });
+        });
+        
+        users[username] = {
+          email: data.email || "",
+          joinedRooms: data.joinedRooms || [],
+          joinedRoomDetails: joinedRoomDetails,
+          overallLastActive: overallLastActive
+        };
+      });
+      
+      return { success: true, users: users };
+    } catch (e) {
+      return { success: false, msg: e.message };
+    }
   },
 
   async adminDeleteUser(adminUser, targetUser, sessionToken) {
@@ -2740,7 +2783,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   let sessionScore = 0; let sessionAttempted = 0; let sessionTotalSeconds = 0; 
   let currentUser = ''; let currentUserJoinedRooms = []; let authMode = 'login'; 
   let allRooms = {}; let currentRoomId = localStorage.getItem('psych_current_room') || 'GLOBAL';
-  let singleOptionCount = 0; let hasRoomEditAccess = false; let isAdmin = false; let isBulkDeleteMode = false; let editingQuestionId = null;
+  let singleOptionCount = 0; let hasRoomEditAccess = false; let isAdmin = false; let isBulkDeleteMode = false; let editingQuestionId = null; let adminUsersCachedData = null;
   let qTimerInterval; let qSeconds = 0;
   let selectedPrintTags = []; let dragSrcIndex = null;
   const curatedPresets = [
@@ -3669,6 +3712,14 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         card.style.transition = 'all 0.2s ease';
         
         const isOwnerOrAdmin = (data.creator === safeUser || isAdmin);
+        let creatorDisplay = formatUsername(data.creator);
+        const isCreatorPrivate = !!(rawData.privacy && rawData.privacy[data.creator.toLowerCase()]);
+        if (isCreatorPrivate) {
+          const isSelf = currentUser && (currentUser.toLowerCase() === data.creator.toLowerCase());
+          if (!isSelf && !isAdmin) {
+            creatorDisplay = "Private Member";
+          }
+        }
         const isProtectedRoom = (roomId === 'GLOBAL');
         
         const displayDesc = data.description;
@@ -3700,7 +3751,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
             <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px; flex-wrap: wrap;">
               <div style="font-weight: 800; font-size: 16px; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="${data.name}">${data.name}</div>
               <span style="font-size:11px; background:var(--surface); padding:3px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); font-weight: bold; font-family: monospace;">${roomId}</span>
-              <span style="font-size: 12px; color: var(--text-light); font-weight: 600;">by ${data.creator}</span>
+              <span style="font-size: 12px; color: var(--text-light); font-weight: 600;">by ${creatorDisplay}</span>
               <span title="${isPrivate ? 'Private Room' : 'Public Room'}" style="font-size: 12px;">${isPrivate ? '🔒' : '🌐'}</span>
               ${passwordHtml ? `<div style="transform: scale(0.9);">${passwordHtml}</div>` : ''}
               <div style="font-size: 12px; color: var(--text-light); font-style: italic; overflow: hidden; text-overflow: ellipsis; max-width: 250px; white-space: nowrap;" title="${displayDesc}">${displayDesc}</div>
@@ -3724,7 +3775,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           let leaveBtnHtml = (filter === 'joined' && !isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%; cursor:pointer;" onclick="leaveJoinedRoomAction('${roomId}')" title="Leave Room">❌ Leave</button>` : '';
           let editDashBtnHtml = (isOwnerOrAdmin && !isProtectedRoom) ? `<button class="btn-outline btn-small" style="padding: 10px; width:100%; cursor:pointer;" onclick="openEditRoomModalFromDash('${roomId}')" title="Edit Room Details">✏️ Edit</button>` : '';
           
-          card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${data.creator}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button style="padding: 10px; font-size: 14px; width:100%; background: var(--primary); color: white; cursor:pointer;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
+          card.innerHTML = `<div><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;"><div style="font-weight: 800; font-size: 18px; color: var(--primary); line-height: 1.2;">${data.name}</div><span style="font-size:11px; background:var(--surface); padding:4px 8px; border-radius:6px; border: 1px solid var(--border); color:var(--text-light); white-space: nowrap; font-weight: bold;">${roomId}</span></div><div style="font-size: 13px; color: var(--text); margin-bottom: 15px; font-weight: 500; line-height: 1.5;">${displayDesc}</div><div style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--text-light); font-weight: 600; flex-wrap:wrap; align-items:center;"><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">👤 ${creatorDisplay}</span><span style="background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${lockIcon}</span>${passwordHtml}</div></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;"><button style="padding: 10px; font-size: 14px; width:100%; background: var(--primary); color: white; cursor:pointer;" onclick="attemptJoinRoomByClick('${roomId}', ${isPrivate})">${joinBtnText}</button> ${editDashBtnHtml} ${togglePrivacyBtn} ${leaveBtnHtml} ${deleteBtnHtml}</div>`;
         }
         listArea.appendChild(card);
       }
@@ -6229,14 +6280,24 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       google.script.run.withSuccessHandler(res => {
           showLoader(false);
           if(res.success) {
+              adminUsersCachedData = res.users;
               let html = `<table style="width:100%; border-collapse:collapse; text-align:left;">
-                  <tr style="border-bottom: 2px solid var(--border);"><th style="padding:10px;">Username</th><th style="padding:10px;">Email</th><th style="padding:10px;">Actions</th></tr>`;
+                  <tr style="border-bottom: 2px solid var(--border);"><th style="padding:10px;">Username</th><th style="padding:10px;">Email</th><th style="padding:10px;">Active Status</th><th style="padding:10px;">Actions</th></tr>`;
               for(let u in res.users) {
                   if (u.toLowerCase() === 'admin') continue;
+                  
+                  const status = getStatusLabel(res.users[u].overallLastActive);
+                  const statusHtml = `<div class="people-status" style="margin: 0; padding: 0; justify-content: flex-start;">
+                    <span class="status-indicator ${status.class}"></span>
+                    <span class="status-text">${status.text}</span>
+                  </div>`;
+                  
                   html += `<tr style="border-bottom: 1px solid var(--border);">
                       <td style="padding:10px;"><b>${u}</b></td>
                       <td style="padding:10px; color:var(--text-light);">${res.users[u].email}</td>
-                      <td style="padding:10px; display:flex; gap:5px;">
+                      <td style="padding:10px;">${statusHtml}</td>
+                      <td style="padding:10px; display:flex; gap:5px; flex-wrap: wrap;">
+                          <button class="btn-outline btn-small" onclick="showAdminUserMoreInfo('${u}')">More Info</button> 
                           <button class="btn-outline btn-small" onclick="adminReset('${u}')">Wipe Progress</button> 
                           <button class="btn-danger btn-small" onclick="adminDelete('${u}')">Delete</button>
                       </td>
@@ -6246,6 +6307,54 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
               document.getElementById('adminListArea').innerHTML = html;
           } else { document.getElementById('adminListArea').innerHTML = res.msg; }
       }).getAdminPanelData(currentUser, getSessionToken());
+  }
+  function showAdminUserMoreInfo(u) {
+    if (!adminUsersCachedData || !adminUsersCachedData[u]) return;
+    const userData = adminUsersCachedData[u];
+    
+    let roomsHtml = "";
+    if (userData.joinedRoomDetails && userData.joinedRoomDetails.length > 0) {
+      roomsHtml = `<table style="width:100%; border-collapse:collapse; text-align:left; font-size: 13px; margin-top: 10px;">
+        <tr style="border-bottom: 2px solid var(--border); font-weight: bold;">
+          <th style="padding:8px;">Room Name</th>
+          <th style="padding:8px;">Room ID</th>
+          <th style="padding:8px;">Privacy Status</th>
+          <th style="padding:8px;">Room Activity</th>
+        </tr>`;
+      
+      userData.joinedRoomDetails.forEach(rm => {
+        const privText = rm.isPrivate ? "🔒 Hidden (Private Member)" : "🌐 Visible (Public)";
+        const actLabel = getStatusLabel(rm.lastActive);
+        const actHtml = `<div class="people-status" style="margin: 0; padding: 0; justify-content: flex-start; transform: scale(0.9); transform-origin: left center;">
+          <span class="status-indicator ${actLabel.class}"></span>
+          <span class="status-text">${actLabel.text}</span>
+        </div>`;
+        
+        roomsHtml += `<tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding:8px; font-weight:600; color:var(--primary);">${rm.roomName}</td>
+          <td style="padding:8px; font-family:monospace; font-weight:bold;">${rm.roomId}</td>
+          <td style="padding:8px; color:var(--text-light);">${privText}</td>
+          <td style="padding:8px;">${actHtml}</td>
+        </tr>`;
+      });
+      roomsHtml += "</table>";
+    } else {
+      roomsHtml = `<p style="color:var(--text-light); text-align:center; font-style:italic; margin-top:15px;">This user has not joined any rooms yet.</p>`;
+    }
+    
+    const content = `
+      <div style="text-align: left; padding: 10px; max-height: 60vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:15px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="margin:0; font-size:18px; color:var(--text);">User Details: <span style="color:var(--primary);">${u}</span></h3>
+          <span style="font-size:12px; font-weight:bold; color:var(--text-light);">${userData.email}</span>
+        </div>
+        
+        <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px;">Joined Rooms & Privacy Configurations:</div>
+        ${roomsHtml}
+      </div>
+    `;
+    
+    customAlert("Detailed User Info", content);
   }
   function adminReset(u) { customConfirm("Reset Progress", `Wipe all cloud progress for user '${u}'?`, () => { showLoader(true); google.script.run.withSuccessHandler(r => { showLoader(false); customAlert(r.success ? "Success" : "Error", r.msg); }).adminResetUserProgress(currentUser, u, getSessionToken()); }); }
   function adminDelete(u) { customPrompt("Delete User", `Type "DELETE" to completely delete user '${u}'`, "text", (val) => { if (val === 'DELETE') { showLoader(true); google.script.run.withSuccessHandler(r => { showLoader(false); customAlert(r.success ? "Success" : "Error", r.msg); loadAdminData(); }).adminDeleteUser(currentUser, u, getSessionToken()); } }); }
