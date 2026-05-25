@@ -2872,6 +2872,76 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     fetchRoomsAndLoadDashboard();
   }
 
+  async function selfHealUsernameOwnership() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) return;
+    if (!currentUser || currentUser === 'Guest' || currentUser.toLowerCase() === 'admin') return;
+    
+    try {
+      const usernamesSnap = await db.collection('usernames').where('email', '==', user.email).get();
+      const oldUsernames = [];
+      usernamesSnap.forEach(doc => {
+        const name = doc.data().username;
+        if (name && name.toLowerCase() !== currentUser.toLowerCase()) {
+          oldUsernames.push(name);
+        }
+      });
+      
+      if (oldUsernames.length === 0) return;
+      
+      console.log("Self-healing username migration: old names detected:", oldUsernames);
+      const batch = db.batch();
+      let needsCommit = false;
+      
+      for (const oldName of oldUsernames) {
+        const oldLower = oldName.toLowerCase();
+        const newLower = currentUser.toLowerCase();
+        
+        // 1. Migrate created rooms
+        const createdRoomsSnap = await db.collection('rooms').where('creator', '==', oldName).get();
+        createdRoomsSnap.forEach(doc => {
+          batch.update(doc.ref, { creator: currentUser });
+          needsCommit = true;
+        });
+        
+        // 2. Fetch user profile joinedRooms
+        const userDocSnap = await db.collection('users').doc(user.uid).get();
+        const joinedRooms = (userDocSnap.exists ? userDocSnap.data().joinedRooms : []) || [];
+        
+        // 3. Migrate permissions in joined rooms
+        for (const roomId of joinedRooms) {
+          const roomRef = db.collection('rooms').doc(roomId);
+          const roomDoc = await roomRef.get();
+          if (roomDoc.exists) {
+            const roomData = roomDoc.data();
+            const permissions = roomData.permissions || {};
+            if (permissions[oldLower]) {
+              const role = permissions[oldLower];
+              const updatedPermissions = { ...permissions };
+              delete updatedPermissions[oldLower];
+              updatedPermissions[newLower] = role;
+              
+              batch.update(roomRef, { permissions: updatedPermissions });
+              needsCommit = true;
+            }
+          }
+        }
+        
+        // 4. Delete the obsolete username doc
+        batch.delete(db.collection('usernames').doc(oldLower));
+        needsCommit = true;
+      }
+      
+      if (needsCommit) {
+        await batch.commit();
+        console.log("Retroactive self-healing username migrations completed!");
+        fetchRoomsAndLoadDashboard();
+      }
+    } catch (err) {
+      console.warn("Self-healing username migration error:", err);
+    }
+  }
+
   let firebaseAuthListenerUnsubscribe = null;
   let hasWaitedForAuth = false;
   function fetchRoomsAndLoadDashboard() { 
@@ -2934,6 +3004,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
                 
                 finalizeDashboardLoad();
                 startSessionValidationListener();
+                selfHealUsernameOwnership();
               } else if (res.reason === "session_conflict") {
                 handleSessionConflict(() => {
                   // If logged out, stop loading dashboard
