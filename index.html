@@ -1461,8 +1461,21 @@ Here are my questions to format:
 </div>
 
 <script>
-  // Global Uncaught Error Banner Diagnostic
+  // Global Uncaught Error Banner Diagnostic with built-in benign ResizeObserver suppressor
   window.addEventListener('error', function(e) {
+    if (e.message && (
+      e.message.includes('ResizeObserver') || 
+      e.message.includes('Resize observer') || 
+      e.message.includes('ResizeObserver loop') ||
+      e.message.includes('ResizeObserver loop limit exceeded') ||
+      e.message.includes('ResizeObserver loop completed with undelivered notifications')
+    )) {
+      console.warn("Harmless ResizeObserver warning ignored:", e.message);
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      return;
+    }
+    
     console.error("Uncaught Runtime Error:", e);
     try {
       customAlert("Application Error ⚠️", `A runtime error occurred: <b>${e.message}</b><br><br><small style="opacity:0.7; font-family:monospace;">At ${e.filename || 'index.html'}:${e.lineno}:${e.colno}</small>`);
@@ -1477,14 +1490,6 @@ Here are my questions to format:
       customAlert("Database/Network Error 🌐", `A background operation failed: <b>${e.reason ? e.reason.message || e.reason : 'Unknown Error'}</b>`);
     } catch (alertErr) {
       alert("Operation Error: " + (e.reason ? e.reason.message || e.reason : 'Unknown Error'));
-    }
-  });
-
-  // Swallows harmless ResizeObserver loop notifications to prevent debug warning overlays on mobile!
-  window.addEventListener('error', (e) => {
-    if (e.message && (e.message.includes('ResizeObserver loop') || e.message.includes('ResizeObserver loop completed'))) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
     }
   });
 
