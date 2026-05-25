@@ -6774,8 +6774,10 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
             sessionStorage.setItem('psych_current_user', newUsername);
           }
           
-          document.getElementById('topBarUsername').innerText = newUsername;
-          document.getElementById('profileNameDisplay').innerText = newUsername;
+          const topBar = document.getElementById('topBarUsername');
+          if (topBar) topBar.innerText = newUsername;
+          const profileName = document.getElementById('profileNameDisplay');
+          if (profileName) profileName.innerText = newUsername;
           const profileBtn = document.getElementById('circularProfileBtn');
           if (profileBtn) profileBtn.innerText = newUsername.charAt(0).toUpperCase();
           
