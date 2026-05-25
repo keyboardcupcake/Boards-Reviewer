@@ -1142,7 +1142,8 @@
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;"><input type="checkbox" id="newRoomPublic" checked style="transform: scale(1.2); cursor:pointer;" onchange="toggleNewRoomPassword(this.checked)"><label for="newRoomPublic" style="margin:0; font-size:14px; font-weight:500; cursor:pointer;">Make Room Public (Visible to everyone)</label></div><button onclick="createNewRoom()">Create & Enter Room</button>
     </div>
     <div id="roomAdminArea" style="display:none;">
-        <div style="margin-bottom:15px; padding:15px; background:rgba(225,29,72,0.1); border:1px solid var(--danger); border-radius:8px;"><h3 style="margin-top:0; color:var(--danger);">User Management</h3><div id="adminListArea" style="max-height:300px; overflow-y:auto; font-size:14px;">Loading...</div></div>
+        <div style="margin-bottom:15px; padding:15px; background:rgba(225,29,72,0.1); border:1px solid var(--danger); border-radius:8px;"><h3 style="margin-top:0; color:var(--danger);">User Management</h3><div id="adminListArea" style="max-height:300px; overflow-y:auto; font-size:14px;">Loading Users...</div></div>
+        <div style="margin-bottom:15px; padding:15px; background:rgba(99,102,241,0.1); border:1px solid var(--primary); border-radius:8px;"><h3 style="margin-top:0; color:var(--primary);">Room Database & Auditing</h3><div id="adminRoomsArea" style="max-height:300px; overflow-y:auto; font-size:14px;">Loading Rooms...</div></div>
     </div>
 </div>
 
@@ -2492,10 +2493,17 @@ const backend = {
       
       const usersSnap = await db.collection('users').get();
       let users = {};
+      let roomMembersMap = {};
+      
       usersSnap.forEach(doc => {
         const data = doc.data();
         const username = data.username || doc.id;
         const lowerUser = username.toLowerCase();
+        
+        // Compile membership count
+        (data.joinedRooms || []).forEach(rId => {
+          roomMembersMap[rId] = (roomMembersMap[rId] || 0) + 1;
+        });
         
         let joinedRoomDetails = [];
         let overallLastActive = null;
@@ -2523,11 +2531,33 @@ const backend = {
           email: data.email || "",
           joinedRooms: data.joinedRooms || [],
           joinedRoomDetails: joinedRoomDetails,
-          overallLastActive: overallLastActive
+          overallLastActive: overallLastActive,
+          isGloballyPrivate: !!data.isGloballyPrivate
         };
       });
       
-      return { success: true, users: users };
+      let roomsList = [];
+      for (const doc of roomsSnap.docs) {
+        const rData = doc.data();
+        const rId = doc.id;
+        
+        let questionsCount = 0;
+        try {
+          const qSnap = await db.collection('rooms').doc(rId).collection('questions').get();
+          questionsCount = qSnap.size;
+        } catch (e) {}
+        
+        roomsList.push({
+          roomId: rId,
+          name: rData.name || rId,
+          creator: rData.creator || 'System',
+          isPublic: rData.isPublic !== false,
+          membersCount: roomMembersMap[rId] || 0,
+          questionsCount: questionsCount
+        });
+      }
+      
+      return { success: true, users: users, rooms: roomsList };
     } catch (e) {
       return { success: false, msg: e.message };
     }
@@ -2812,7 +2842,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function customPrompt(title, message, inputType, onConfirm) { modalConfirmCallback = onConfirm; setupModal(title, message, 'prompt', inputType); }
   function customDropdownPrompt(title, message, options, onConfirm) { modalConfirmCallback = onConfirm; setupModal(title, message, 'select', options); }
   function setupModal(title, message, type, extra) { clearTimeout(modalCloseTimeout); document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerHTML = message.replace(/\n/g, '<br>'); var input = document.getElementById('modalInput'); var select = document.getElementById('modalSelect'); if (!select) { select = document.createElement('select'); select.id = 'modalSelect'; select.style.display = 'none'; select.style.marginBottom = '20px'; select.style.width = '100%'; select.style.padding = '10px'; select.style.borderRadius = '8px'; input.parentNode.insertBefore(select, input.nextSibling); } var cancelBtn = document.getElementById('modalCancelBtn'); var confirmBtn = document.getElementById('modalConfirmBtn'); input.style.display = 'none'; select.style.display = 'none'; if (type === 'prompt') { input.style.display = 'block'; input.type = extra || 'text'; input.value = ''; } else if (type === 'select') { select.style.display = 'block'; select.innerHTML = ''; extra.forEach(opt => { const el = document.createElement('option'); el.value = opt; el.innerText = opt; select.appendChild(el); }); } cancelBtn.style.display = (type === 'confirm' || type === 'prompt' || type === 'select') ? 'inline-block' : 'none'; const handleConfirm = function() { var callbackToRun = modalConfirmCallback; var retVal = type === 'prompt' ? input.value : (type === 'select' ? select.value : null); closeModal(); if ((type === 'prompt' || type === 'select') && callbackToRun) callbackToRun(retVal); else if (type === 'confirm' && callbackToRun) callbackToRun(); }; confirmBtn.onclick = handleConfirm; cancelBtn.onclick = function() { var callbackToRun = modalCancelCallback; closeModal(); if (callbackToRun) callbackToRun(); }; input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); handleConfirm(); } }; var overlay = document.getElementById('customModalOverlay'); overlay.style.display = 'flex'; if (type === 'prompt') setTimeout(function(){ input.focus(); }, 50); }
-  function closeModal() { document.getElementById('customModalOverlay').style.display = 'none'; modalConfirmCallback = null; modalCancelCallback = null; }
+  function closeModal() { document.getElementById('customModalOverlay').style.display = 'none'; modalConfirmCallback = null; modalCancelCallback = null; const modal = document.querySelector('#customModalOverlay .custom-modal'); if (modal) modal.style.maxWidth = ''; }
   function openTutorial() { document.getElementById('tutorialModalOverlay').style.display = 'flex'; }
   function closeTutorial() { if(document.getElementById('hideTutorialChk').checked) localStorage.setItem('psych_hide_tutorial', 'true'); document.getElementById('tutorialModalOverlay').style.display = 'none'; }
   function initKeyboardShortcuts() { document.addEventListener('keydown', (e) => { if (document.getElementById('quizArea').style.display !== 'block') return; const targetTag = e.target.tagName; if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.isContentEditable) return; const key = e.key.toLowerCase(); if (['1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h','i','j'].includes(key)) { let index = parseInt(key) - 1; if (isNaN(index)) index = key.charCodeAt(0) - 97; const radios = document.querySelectorAll('input[name="q_option"]'); if (radios[index] && !radios[index].disabled) radios[index].checked = true; } if (key === 'enter') { e.preventDefault(); if (document.getElementById('submitBtn').style.display !== 'none') checkAnswer(); else if (document.getElementById('nextBtn').style.display !== 'none') goForward(); } if (key === 'arrowright') { e.preventDefault(); if (document.getElementById('submitBtn').style.display !== 'none') skipQuestion(); else if (document.getElementById('nextBtn').style.display !== 'none') goForward(); } }); }
@@ -6281,6 +6311,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
           showLoader(false);
           if(res.success) {
               adminUsersCachedData = res.users;
+              
+              // 1. Render User Management Table
               let html = `<table style="width:100%; border-collapse:collapse; text-align:left;">
                   <tr style="border-bottom: 2px solid var(--border);"><th style="padding:10px;">Username</th><th style="padding:10px;">Email</th><th style="padding:10px;">Active Status</th><th style="padding:10px;">Actions</th></tr>`;
               for(let u in res.users) {
@@ -6292,8 +6324,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
                     <span class="status-text">${status.text}</span>
                   </div>`;
                   
+                  const globalPrivBadge = res.users[u].isGloballyPrivate 
+                    ? ' <span style="font-size:11px; font-weight:normal; background:var(--danger); color:white; padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">🔒 Hide Username</span>' 
+                    : '';
+                  
                   html += `<tr style="border-bottom: 1px solid var(--border);">
-                      <td style="padding:10px;"><b>${u}</b></td>
+                      <td style="padding:10px;"><b>${u}</b>${globalPrivBadge}</td>
                       <td style="padding:10px; color:var(--text-light);">${res.users[u].email}</td>
                       <td style="padding:10px;">${statusHtml}</td>
                       <td style="padding:10px; display:flex; gap:5px; flex-wrap: wrap;">
@@ -6305,12 +6341,51 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
               }
               html += '</table>';
               document.getElementById('adminListArea').innerHTML = html;
-          } else { document.getElementById('adminListArea').innerHTML = res.msg; }
+              
+              // 2. Render Room Database & Auditing Table
+              let roomsHtml = `<table style="width:100%; border-collapse:collapse; text-align:left;">
+                  <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="padding:10px;">Room Name</th>
+                    <th style="padding:10px;">Room ID</th>
+                    <th style="padding:10px;">Creator</th>
+                    <th style="padding:10px;">Access Type</th>
+                    <th style="padding:10px;">Members</th>
+                    <th style="padding:10px;">Actions</th>
+                  </tr>`;
+              
+              if (res.rooms && res.rooms.length > 0) {
+                res.rooms.forEach(rm => {
+                  const accessText = rm.isPublic ? "🌐 Public" : "🔒 Private";
+                  roomsHtml += `<tr style="border-bottom: 1px solid var(--border);">
+                      <td style="padding:10px; font-weight:700; color:var(--primary);">${rm.name}</td>
+                      <td style="padding:10px; font-family:monospace; font-weight:bold;">${rm.roomId}</td>
+                      <td style="padding:10px; color:var(--text-light);">${rm.creator}</td>
+                      <td style="padding:10px;">${accessText}</td>
+                      <td style="padding:10px; font-weight:bold;">${rm.membersCount}</td>
+                      <td style="padding:10px;">
+                          <button class="btn-danger btn-small" onclick="adminDeleteRoom('${rm.roomId}', '${rm.name}')">Delete Room</button>
+                      </td>
+                  </tr>`;
+                });
+              } else {
+                roomsHtml += `<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text-light); font-style:italic;">No rooms found in database.</td></tr>`;
+              }
+              roomsHtml += '</table>';
+              document.getElementById('adminRoomsArea').innerHTML = roomsHtml;
+              
+          } else { 
+              document.getElementById('adminListArea').innerHTML = res.msg; 
+              document.getElementById('adminRoomsArea').innerHTML = "Failed to load rooms.";
+          }
       }).getAdminPanelData(currentUser, getSessionToken());
   }
   function showAdminUserMoreInfo(u) {
     if (!adminUsersCachedData || !adminUsersCachedData[u]) return;
     const userData = adminUsersCachedData[u];
+    
+    // Temporarily widen the modal!
+    const modal = document.querySelector('#customModalOverlay .custom-modal');
+    if (modal) modal.style.maxWidth = '650px';
     
     let roomsHtml = "";
     if (userData.joinedRoomDetails && userData.joinedRoomDetails.length > 0) {
@@ -6342,10 +6417,17 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       roomsHtml = `<p style="color:var(--text-light); text-align:center; font-style:italic; margin-top:15px;">This user has not joined any rooms yet.</p>`;
     }
     
+    const globalPrivBadge = userData.isGloballyPrivate 
+      ? `<span style="font-size:11px; font-weight:bold; background:var(--danger); color:white; padding:4px 8px; border-radius:4px; margin-left:6px; display:inline-flex; align-items:center; gap:4px; vertical-align:middle;">🔒 Hide Username (Globally Enabled)</span>` 
+      : `<span style="font-size:11px; font-weight:bold; background:var(--success); color:white; padding:4px 8px; border-radius:4px; margin-left:6px; display:inline-flex; align-items:center; gap:4px; vertical-align:middle;">🌐 Visible Profile</span>`;
+    
     const content = `
-      <div style="text-align: left; padding: 10px; max-height: 60vh; overflow-y: auto;">
+      <div style="text-align: left; padding: 10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:15px; flex-wrap: wrap; gap: 8px;">
-          <h3 style="margin:0; font-size:18px; color:var(--text);">User Details: <span style="color:var(--primary);">${u}</span></h3>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <h3 style="margin:0; font-size:18px; color:var(--text);">User Details: <span style="color:var(--primary);">${u}</span></h3>
+            ${globalPrivBadge}
+          </div>
           <span style="font-size:12px; font-weight:bold; color:var(--text-light);">${userData.email}</span>
         </div>
         
@@ -6354,10 +6436,12 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       </div>
     `;
     
-    customAlert("Detailed User Info", content);
+    // Strip newlines from HTML to prevent replace(/\n/g, '<br>') from breaking the tables!
+    customAlert("Detailed User Info", content.replace(/\n/g, ''));
   }
   function adminReset(u) { customConfirm("Reset Progress", `Wipe all cloud progress for user '${u}'?`, () => { showLoader(true); google.script.run.withSuccessHandler(r => { showLoader(false); customAlert(r.success ? "Success" : "Error", r.msg); }).adminResetUserProgress(currentUser, u, getSessionToken()); }); }
   function adminDelete(u) { customPrompt("Delete User", `Type "DELETE" to completely delete user '${u}'`, "text", (val) => { if (val === 'DELETE') { showLoader(true); google.script.run.withSuccessHandler(r => { showLoader(false); customAlert(r.success ? "Success" : "Error", r.msg); loadAdminData(); }).adminDeleteUser(currentUser, u, getSessionToken()); } }); }
+  function adminDeleteRoom(roomId, roomName) { customPrompt("Delete Room (Admin Override)", `Type "DELETE" to permanently erase room '${roomName}' (ID: ${roomId}) and all its questions from the database.`, "text", (val) => { if (val === 'DELETE') { showLoader(true); google.script.run.withSuccessHandler(r => { showLoader(false); customAlert(r.success ? "Success" : "Error", r.msg); loadAdminData(); }).deleteRoomDB(roomId, currentUser, getSessionToken()); } }); }
 
   function pingActivity() {
     if (currentUser && currentUser !== 'Guest' && currentRoomId) {
