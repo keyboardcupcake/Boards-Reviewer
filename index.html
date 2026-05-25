@@ -3204,6 +3204,23 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     startSessionValidationListener();
   }
   function logoutUser() { 
+    if (currentRoomId === 'GLOBAL' || currentUser === 'Guest' || currentUser.toLowerCase() === 'admin') {
+      executeLogoutClient();
+      return;
+    }
+    
+    showLoader(true);
+    const token = localStorage.getItem('psych_session_token') || "";
+    google.script.run.withSuccessHandler(res => {
+      showLoader(false);
+      executeLogoutClient();
+    }).withFailureHandler(err => {
+      showLoader(false);
+      executeLogoutClient();
+    }).syncUserProgress(currentUser, seenQuestions, token);
+  }
+  
+  function executeLogoutClient() {
     if (currentRoomListenerUnsubscribe) {
       currentRoomListenerUnsubscribe();
       currentRoomListenerUnsubscribe = null;
@@ -3375,20 +3392,17 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function syncToCloud() {
       localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
       if (currentUser && currentUser !== 'Guest' && currentUser.toLowerCase() !== 'admin') {
-          clearTimeout(cloudSyncTimeout);
-          cloudSyncTimeout = setTimeout(() => {
-              const token = localStorage.getItem('psych_session_token') || "";
-              google.script.run.withSuccessHandler(res => {
-                  if (res && res.success) {
-                      seenQuestions = res.progress || {};
-                      localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
-                  } else if (res && !res.success && res.reason === "session_conflict") {
-                      handleSessionConflict();
-                  }
-              }).withFailureHandler(err => {
-                  console.warn("Background cloud sync failed:", err);
-              }).syncUserProgress(currentUser, seenQuestions, token);
-          }, 1000);
+          const token = localStorage.getItem('psych_session_token') || "";
+          google.script.run.withSuccessHandler(res => {
+              if (res && res.success) {
+                  seenQuestions = res.progress || {};
+                  localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions));
+              } else if (res && !res.success && res.reason === "session_conflict") {
+                  handleSessionConflict();
+              }
+          }).withFailureHandler(err => {
+              console.warn("Background cloud sync failed:", err);
+          }).syncUserProgress(currentUser, seenQuestions, token);
       }
   }
 
