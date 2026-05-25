@@ -4696,9 +4696,101 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     }
     const subject = document.getElementById('subjectSelect').value; showLoader(true); google.script.run.withSuccessHandler(res => { updateBadge(); populateTagFilters(); populateAddTagFilters(); showLoader(false); if(callback) callback(); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to save to database."); }).saveQuestionsJSON(currentRoomId, subject, currentQuestions, currentUser, getSessionToken());
   }
-  function saveSessionState() { const subject = document.getElementById('subjectSelect').value; const pKey = getProgressKey(); const state = { pendingQueue, sessionHistory, currentHistoryIndex, sessionScore, sessionAttempted, sessionTotalSeconds }; localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, JSON.stringify(state)); }
-  function clearSessionState() { const subject = document.getElementById('subjectSelect').value; const pKey = getProgressKey(); localStorage.removeItem(`psych_state_${currentRoomId}_${subject}_${pKey}`); }
-  function handleTagSwitch() { const subjectSelect = document.getElementById('subjectSelect'); if(!subjectSelect || !subjectSelect.value) return; const subject = subjectSelect.value; const pKey = initSubjectMemory(subject); const savedState = localStorage.getItem(`psych_state_${currentRoomId}_${subject}_${pKey}`); if (savedState) { const s = JSON.parse(savedState); pendingQueue = s.pendingQueue || []; sessionHistory = s.sessionHistory || []; currentHistoryIndex = s.currentHistoryIndex !== undefined ? s.currentHistoryIndex : -1; sessionScore = s.sessionScore || 0; sessionAttempted = s.sessionAttempted || 0; sessionTotalSeconds = s.sessionTotalSeconds || 0; filteredQs = currentQuestions; const selectedTag = document.getElementById('tagFilter').value; if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag); if (sessionHistory.length > 0 && currentHistoryIndex !== -1) { currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]); if(!currentQuestionObj) { clearSessionState(); seenQuestions[currentRoomId][subject][pKey] = {}; syncToCloud(); pendingQueue = filteredQs.map(q => q.id); sessionHistory = []; currentHistoryIndex = -1; sessionScore = 0; sessionAttempted = 0; sessionTotalSeconds = 0; updateScoreUI(); document.getElementById('quizArea').style.display = 'none'; customAlert("Quiz Reset", "The question you were answering is no longer in the bank. Progress for this group reset."); return; } } else { currentQuestionObj = null; } } else { buildQueue(); sessionHistory = []; currentHistoryIndex = -1; currentQuestionObj = null; sessionAttempted = 0; sessionScore = 0; sessionTotalSeconds = 0; const mode = document.querySelector('input[name="mode"]:checked').value; if (mode === 'session') { filteredQs.forEach(q => { const userAns = seenQuestions[currentRoomId][subject][pKey][q.id]; if (userAns) { sessionAttempted++; if (userAns === q.correct) sessionScore++; } }); } } updateScoreUI(); document.getElementById('quizArea').style.display = 'none'; document.getElementById('quizSettingsArea').style.display = 'block'; }
+  function saveSessionState() {
+    const subject = document.getElementById('subjectSelect').value;
+    const pKey = getProgressKey();
+    const state = { pendingQueue, sessionHistory, currentHistoryIndex, sessionScore, sessionAttempted, sessionTotalSeconds };
+    
+    if (seenQuestions && seenQuestions[currentRoomId]) {
+      if (!seenQuestions[currentRoomId][subject]) seenQuestions[currentRoomId][subject] = {};
+      seenQuestions[currentRoomId][subject][`state_${pKey}`] = state;
+    }
+    
+    localStorage.setItem(`psych_state_${currentRoomId}_${subject}_${pKey}`, JSON.stringify(state));
+    syncToCloud();
+  }
+  
+  function clearSessionState() {
+    const subject = document.getElementById('subjectSelect').value;
+    const pKey = getProgressKey();
+    
+    if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject]) {
+      delete seenQuestions[currentRoomId][subject][`state_${pKey}`];
+    }
+    
+    localStorage.removeItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
+    syncToCloud();
+  }
+  
+  function handleTagSwitch() {
+    const subjectSelect = document.getElementById('subjectSelect');
+    if (!subjectSelect || !subjectSelect.value) return;
+    const subject = subjectSelect.value;
+    const pKey = initSubjectMemory(subject);
+    
+    let savedState = null;
+    if (seenQuestions && seenQuestions[currentRoomId] && seenQuestions[currentRoomId][subject] && seenQuestions[currentRoomId][subject][`state_${pKey}`]) {
+      savedState = JSON.stringify(seenQuestions[currentRoomId][subject][`state_${pKey}`]);
+    } else {
+      savedState = localStorage.getItem(`psych_state_${currentRoomId}_${subject}_${pKey}`);
+    }
+    
+    if (savedState) {
+      const s = JSON.parse(savedState);
+      pendingQueue = s.pendingQueue || [];
+      sessionHistory = s.sessionHistory || [];
+      currentHistoryIndex = s.currentHistoryIndex !== undefined ? s.currentHistoryIndex : -1;
+      sessionScore = s.sessionScore || 0;
+      sessionAttempted = s.sessionAttempted || 0;
+      sessionTotalSeconds = s.sessionTotalSeconds || 0;
+      
+      filteredQs = currentQuestions;
+      const selectedTag = document.getElementById('tagFilter').value;
+      if (selectedTag !== "ALL") filteredQs = filteredQs.filter(q => q.tag === selectedTag);
+      
+      if (sessionHistory.length > 0 && currentHistoryIndex !== -1) {
+        currentQuestionObj = filteredQs.find(q => q.id === sessionHistory[currentHistoryIndex]);
+        if (!currentQuestionObj) {
+          clearSessionState();
+          seenQuestions[currentRoomId][subject][pKey] = {};
+          syncToCloud();
+          pendingQueue = filteredQs.map(q => q.id);
+          sessionHistory = [];
+          currentHistoryIndex = -1;
+          sessionScore = 0;
+          sessionAttempted = 0;
+          sessionTotalSeconds = 0;
+          updateScoreUI();
+          document.getElementById('quizArea').style.display = 'none';
+          customAlert("Quiz Reset", "The question you were answering is no longer in the bank. Progress for this group reset.");
+          return;
+        }
+      } else {
+        currentQuestionObj = null;
+      }
+    } else {
+      buildQueue();
+      sessionHistory = [];
+      currentHistoryIndex = -1;
+      currentQuestionObj = null;
+      sessionAttempted = 0;
+      sessionScore = 0;
+      sessionTotalSeconds = 0;
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      if (mode === 'session') {
+        filteredQs.forEach(q => {
+          const userAns = seenQuestions[currentRoomId][subject][pKey][q.id];
+          if (userAns) {
+            sessionAttempted++;
+            if (userAns === q.correct) sessionScore++;
+          }
+        });
+      }
+    }
+    updateScoreUI();
+    document.getElementById('quizArea').style.display = 'none';
+    document.getElementById('quizSettingsArea').style.display = 'block';
+  }
   function updateScoreUI() { document.getElementById('scoreVal').innerText = sessionScore; document.getElementById('attemptedVal').innerText = sessionAttempted; }
   function startTimer() { clearInterval(qTimerInterval); qSeconds = 0; document.getElementById('qTimerDisplay').innerText = "00:00"; qTimerInterval = setInterval(() => { qSeconds++; let m = String(Math.floor(qSeconds / 60)).padStart(2, '0'); let s = String(qSeconds % 60).padStart(2, '0'); document.getElementById('qTimerDisplay').innerText = m + ":" + s; }, 1000); }
   function stopTimer() { clearInterval(qTimerInterval); }
@@ -4972,6 +5064,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       } else {
         seenQuestions[currentRoomId][subject][pKey] = {}; 
       }
+      
+      sessionScore = 0;
+      sessionAttempted = 0;
+      sessionTotalSeconds = 0;
+      pendingQueue = [];
+      sessionHistory = [];
+      currentHistoryIndex = -1;
+      currentQuestionObj = null;
+      
       endlessAnswers = {};
       clearSessionState(); 
       syncToCloud(); 
@@ -4985,6 +5086,15 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       const b = seenQuestions[currentRoomId][subject].bookmarks || []; 
       seenQuestions[currentRoomId][subject] = { bookmarks: b, mistakes: {} }; 
       endlessAnswers = {};
+      
+      sessionScore = 0;
+      sessionAttempted = 0;
+      sessionTotalSeconds = 0;
+      pendingQueue = [];
+      sessionHistory = [];
+      currentHistoryIndex = -1;
+      currentQuestionObj = null;
+      
       Object.keys(localStorage).forEach(key => { 
         if (key.startsWith(`psych_state_${currentRoomId}_${subject}`)) localStorage.removeItem(key); 
       }); 
