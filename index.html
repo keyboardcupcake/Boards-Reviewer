@@ -1841,6 +1841,18 @@ const backend = {
         email = 'admin@boards-reviewer.com';
       } else if (username.includes('@')) {
         email = username;
+        try {
+          const emailCheck = await db.collection('usernames').where('email', '==', email.toLowerCase()).get();
+          if (!emailCheck.empty) {
+            emailCheck.forEach(doc => {
+              userDoc = doc;
+              userDocExists = true;
+            });
+          }
+        } catch (firestoreErr) {
+          console.warn("Firestore email lookup failed:", firestoreErr);
+          firestoreBlocked = true;
+        }
       } else {
         try {
           userDoc = await db.collection('usernames').doc(lowerUser).get();
@@ -1903,7 +1915,8 @@ const backend = {
             await batch.commit();
           }
           
-          await db.collection('usernames').doc(lowerUser).update({
+          const resolvedLower = ((userDocExists && userDoc) ? userDoc.id : username).toLowerCase();
+          await db.collection('usernames').doc(resolvedLower).update({
             uid: user.uid
           });
         } catch(migrationErr) {
@@ -1922,6 +1935,13 @@ const backend = {
         profileDoc = await db.collection('users').doc(user.uid).get();
       }
       
+      const resolvedUsername = (userDocExists && userDoc) ? userDoc.data().username : (lowerUser === 'admin' ? 'Admin' : username);
+      const token = user.uid + "_" + Date.now();
+      
+      await db.collection('users').doc(user.uid).update({
+        currentSessionToken: token
+      });
+      
       const profile = profileDoc.data() || {};
       const joinedRooms = profile.joinedRooms || ['GLOBAL'];
       
@@ -1933,7 +1953,7 @@ const backend = {
         progress[rId][subj] = doc.data();
       });
       
-      return { success: true, msg: "Logged in!", progress: progress, joinedRooms: joinedRooms, sessionToken: user.uid };
+      return { success: true, msg: "Logged in!", username: resolvedUsername, progress: progress, joinedRooms: joinedRooms, sessionToken: token };
     } catch(e) {
       return { success: false, msg: "Incorrect username/email or password." };
     }
@@ -1942,10 +1962,15 @@ const backend = {
   async syncUserProgress(username, progressData, clientToken) {
     if (username === 'Guest' || username.toLowerCase() === 'admin') return { success: false };
     const user = auth.currentUser;
-    const uid = user ? user.uid : clientToken;
+    const uid = clientToken ? clientToken.split('_')[0] : (user ? user.uid : null);
     if (!uid) return { success: false, msg: "Not authenticated" };
     
     try {
+      const profileDoc = await db.collection('users').doc(uid).get();
+      if (profileDoc.exists && profileDoc.data().currentSessionToken && profileDoc.data().currentSessionToken !== clientToken) {
+        return { success: false, reason: "session_conflict", msg: "Logged in on another device." };
+      }
+      
       const progressRef = db.collection('users').doc(uid).collection('progress');
       for (let rId in progressData) {
         for (let subject in progressData[rId]) {
@@ -1989,7 +2014,6 @@ const backend = {
         progress[rId][subj] = doc.data();
       });
       
-      const profileDoc = await db.collection('users').doc(uid).get();
       const joinedRooms = (profileDoc.exists ? profileDoc.data().joinedRooms : []) || ['GLOBAL'];
       
       return { success: true, progress: progress, joinedRooms: joinedRooms };
@@ -2000,21 +2024,29 @@ const backend = {
 
   async forceFetchProgress(username, clientToken) {
     const user = auth.currentUser;
-    const uid = user ? user.uid : clientToken;
+    const uid = clientToken ? clientToken.split('_')[0] : (user ? user.uid : null);
     if (!uid) return { success: false };
     
-    const profileDoc = await db.collection('users').doc(uid).get();
-    const joinedRooms = (profileDoc.exists ? profileDoc.data().joinedRooms : []) || ['GLOBAL'];
-    
-    const progressSnap = await db.collection('users').doc(uid).collection('progress').get();
-    let progress = {};
-    progressSnap.forEach(doc => {
-      const [rId, subj] = doc.id.split('___');
-      if (!progress[rId]) progress[rId] = {};
-      progress[rId][subj] = doc.data();
-    });
-    
-    return { success: true, progress: progress, joinedRooms: joinedRooms };
+    try {
+      const profileDoc = await db.collection('users').doc(uid).get();
+      if (profileDoc.exists && profileDoc.data().currentSessionToken && profileDoc.data().currentSessionToken !== clientToken) {
+        return { success: false, reason: "session_conflict", msg: "Logged in on another device." };
+      }
+      
+      const joinedRooms = (profileDoc.exists ? profileDoc.data().joinedRooms : []) || ['GLOBAL'];
+      
+      const progressSnap = await db.collection('users').doc(uid).collection('progress').get();
+      let progress = {};
+      progressSnap.forEach(doc => {
+        const [rId, subj] = doc.id.split('___');
+        if (!progress[rId]) progress[rId] = {};
+        progress[rId][subj] = doc.data();
+      });
+      
+      return { success: true, progress: progress, joinedRooms: joinedRooms };
+    } catch(e) {
+      return { success: false, msg: e.message };
+    }
   },
 
   async forceOverwriteSession(username, clientToken, password) {
@@ -3244,44 +3276,9 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   }
   
   function handleSessionConflict(onCancelOverride) {
-    customConfirm(
-      "Session Conflict 🔄",
-      "This account has been logged in on another device.\n\nWould you like to keep logged in on this device and disconnect the other? Clicking 'Cancel' will log you out of this device.",
-      () => {
-        customPrompt(
-          "Confirm Password",
-          "Enter your password to verify your identity and disconnect the other device:",
-          "password",
-          (enteredPass) => {
-            if (!enteredPass) {
-              logoutUser();
-              if (onCancelOverride) onCancelOverride();
-              return;
-            }
-            showLoader(true);
-            const token = 'tok_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-            google.script.run.withSuccessHandler(res => {
-              showLoader(false);
-              if (res.success) {
-                localStorage.setItem('psych_session_token', token);
-                pullCloudProgress();
-              } else {
-                customAlert("Error", "Failed to override session: " + (res.msg || "unknown error"));
-                logoutUser();
-              }
-            }).withFailureHandler(err => {
-              showLoader(false);
-              customAlert("Error", "Failed to communicate with server.");
-              logoutUser();
-            }).forceOverwriteSession(currentUser, token, enteredPass);
-          }
-        );
-      },
-      () => {
-        logoutUser();
-        if (onCancelOverride) onCancelOverride();
-      }
-    );
+    logoutUser();
+    customAlert("Logged Out 🔄", "You have been logged out of this device because this account was logged in on another device!");
+    if (onCancelOverride) onCancelOverride();
   }
 
   function mergeProgressObjectsClient(serverProgress, clientProgress) {
@@ -5889,6 +5886,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     });
     
     memberDataList.forEach(m => {
+      if (m.username.includes('@')) return;
       const isOwner = (currentUser !== 'Guest' && currentUser.toLowerCase() === room.creator.toLowerCase()) || isAdmin;
       const isSelf = (currentUser.toLowerCase() === m.username.toLowerCase());
       const isSystemAdmin = isAdmin; // Only system 'admin' can see private usernames
@@ -5988,6 +5986,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     });
     
     members.forEach(m => {
+      if (m.includes('@')) return;
       const isCreator = (m === room.creator.toLowerCase());
       let role = isCreator ? 'creator' : (room.permissions && room.permissions[m] ? room.permissions[m] : 'viewer');
       
