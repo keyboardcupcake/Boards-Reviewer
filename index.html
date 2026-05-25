@@ -36,9 +36,9 @@
     .top-control-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;} .header-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; } .user-profile-btn { display: flex; align-items: center; gap: 8px; background: var(--surface-alt); padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; color: var(--text); } .user-profile-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
     .color-picker { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;} .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; } .color-swatch:hover { transform: scale(1.15); } .color-swatch.active { border-color: var(--text); transform: scale(1.15); }
     .switch-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: center;} .switch-container { display: flex; align-items: center; gap: 6px; } .switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; } .switch input { opacity: 0; width: 0; height: 0; } .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 34px; border: 1px solid var(--text-light); } .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; } input:checked + .slider { background-color: var(--primary); border-color: var(--primary); } input:checked + .slider:before { transform: translateX(16px); }
-    @keyframes marquee-slide {
-      0%, 15% { transform: translateX(0); }
-      85%, 100% { transform: translateX(calc(-100% + 155px)); }
+    @keyframes marquee-continuous {
+      0% { transform: translateX(0); }
+      90%, 100% { transform: translateX(calc(-100% + 120px)); }
     }
     
     /* Premium Custom Radio Buttons (Resolves Bleeding/Contrast) */
@@ -1952,7 +1952,11 @@ const backend = {
       const progressSnap = await db.collection('users').doc(user.uid).collection('progress').get();
       let progress = {};
       progressSnap.forEach(doc => {
-        const [rId, subj] = doc.id.split('___');
+        let docId = doc.id;
+        if (docId.includes('%')) {
+          try { docId = decodeURIComponent(docId); } catch(e) {}
+        }
+        const [rId, subj] = docId.split('___');
         if (!progress[rId]) progress[rId] = {};
         progress[rId][subj] = doc.data();
       });
@@ -1979,7 +1983,7 @@ const backend = {
       for (let rId in progressData) {
         for (let subject in progressData[rId]) {
           const clientSubject = progressData[rId][subject];
-          const docId = `${rId}___${subject}`;
+          const docId = encodeURIComponent(`${rId}___${subject}`);
           await progressRef.doc(docId).set(clientSubject || {});
         }
       }
@@ -1987,7 +1991,11 @@ const backend = {
       const progressSnap = await progressRef.get();
       let progress = {};
       progressSnap.forEach(doc => {
-        const [rId, subj] = doc.id.split('___');
+        let docId = doc.id;
+        if (docId.includes('%')) {
+          try { docId = decodeURIComponent(docId); } catch(e) {}
+        }
+        const [rId, subj] = docId.split('___');
         if (!progress[rId]) progress[rId] = {};
         progress[rId][subj] = doc.data();
       });
@@ -2016,7 +2024,11 @@ const backend = {
       const progressSnap = await db.collection('users').doc(uid).collection('progress').get();
       let progress = {};
       progressSnap.forEach(doc => {
-        const [rId, subj] = doc.id.split('___');
+        let docId = doc.id;
+        if (docId.includes('%')) {
+          try { docId = decodeURIComponent(docId); } catch(e) {}
+        }
+        const [rId, subj] = docId.split('___');
         if (!progress[rId]) progress[rId] = {};
         progress[rId][subj] = doc.data();
       });
@@ -5068,8 +5080,8 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
       
       const isLong = tag.length > 18;
       const tagTitleSpan = isLong 
-        ? `<div style="overflow: hidden; white-space: nowrap; max-width: 155px; display: inline-block; text-align: left; vertical-align: middle;">
-             <span style="display: inline-block; white-space: nowrap; animation: marquee-slide 8s linear infinite alternate; animation-delay: 1.5s;">🏷️ ${tag}</span>
+        ? `<span style="vertical-align: middle; display: inline-block;">🏷️&nbsp;</span><div style="overflow: hidden; white-space: nowrap; max-width: 130px; display: inline-block; text-align: left; vertical-align: middle;">
+             <span style="display: inline-block; white-space: nowrap; animation: marquee-continuous 4.5s linear infinite;">${tag}</span>
            </div>`
         : `<span style="text-align: left; max-width: 155px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; display: inline-block;">🏷️ ${tag}</span>`;
 
