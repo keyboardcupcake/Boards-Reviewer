@@ -5166,16 +5166,18 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         const animId = `mq_${Math.random().toString(36).substr(2, 9)}`;
         const duration = Math.max(2.5, Math.round((scrollDist / 35) * 10) / 10);
         tagTitleSpan = `
-          <span style="vertical-align: middle; display: inline-block;">🏷️&nbsp;</span>
-          <div style="overflow: hidden; white-space: nowrap; max-width: 130px; display: inline-block; text-align: left; vertical-align: middle;">
-            <style>
-              @keyframes ${animId} {
-                0%, 15% { transform: translateX(0); }
-                45%, 55% { transform: translateX(-${scrollDist}px); }
-                85%, 100% { transform: translateX(0); }
-              }
-            </style>
-            <span style="display: inline-block; white-space: nowrap; animation: ${animId} ${duration * 2}s ease-in-out infinite;">${tag}</span>
+          <div style="display: flex; align-items: center; gap: 4px; text-align: left; vertical-align: middle;">
+            <span style="flex-shrink: 0; display: inline-flex; align-items: center;">🏷️</span>
+            <div style="overflow: hidden; white-space: nowrap; max-width: 130px; display: inline-block; text-align: left;">
+              <style>
+                @keyframes ${animId} {
+                  0%, 15% { transform: translateX(0); }
+                  45%, 55% { transform: translateX(-${scrollDist}px); }
+                  85%, 100% { transform: translateX(0); }
+                }
+              </style>
+              <span style="display: inline-block; white-space: nowrap; animation: ${animId} ${duration * 2}s ease-in-out infinite;">${tag}</span>
+            </div>
           </div>
         `.replace(/\n/g, '');
       } else {
