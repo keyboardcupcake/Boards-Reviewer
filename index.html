@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Boards Reviewer</title>
+  <title>Boards Drill Builder</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
   <style>
     :root { --primary: #6366F1; --primary-hover: #4F46E5; --bg: #F9FAFB; --surface: #FFFFFF; --text: #1F2937; --text-light: #6B7280; --danger: #E11D48; --danger-hover: #BE123C; --success: #10B981; --border: #E5E7EB; --surface-alt: #F3F4F6; --input-bg: #FFFFFF; }
@@ -826,7 +826,7 @@
   <div class="custom-modal" style="text-align: left;">
     <h3 style="margin-top:0; color:var(--text);">Edit Room Details</h3>
     <label>Room Name</label><input type="text" id="editRoomName" style="margin-bottom: 15px;">
-    <label>Quiz Page Title (H1)</label><input type="text" id="editQuizTitle" style="margin-bottom: 15px;" placeholder="e.g. Boards Reviewer">
+    <label>Quiz Page Title (H1)</label><input type="text" id="editQuizTitle" style="margin-bottom: 15px;" placeholder="e.g. Boards Drill Builder">
     <label>Description</label><textarea id="editRoomDesc" maxlength="60" style="height:80px; margin-bottom: 15px;"></textarea>
     <label>Room Password <span id="editPassNote" style="font-size:11px; font-weight:normal; color:var(--danger); margin-left: 5px;"></span></label>
     <div style="display:flex; align-items:center; gap:10px; margin-bottom: 15px;"><input type="password" id="editRoomPassword" placeholder="No password set" style="flex:1; margin-bottom:0;"><button class="btn-outline btn-small" id="toggleEditPassBtn" onclick="toggleEditModalPassword()" style="padding: 12px; width: auto;" title="Show/Hide Password">👁️</button><button class="btn-outline btn-small" id="togglePrivacyModalBtn" onclick="togglePrivacyFromModal()" style="padding: 12px; width: auto; font-weight: bold;"></button></div>
@@ -888,7 +888,7 @@
 
 <div id="tutorialModalOverlay" class="custom-modal-overlay">
   <div class="custom-modal" style="max-width: 550px;">
-    <h3 style="margin-top:0; color:var(--text); font-size:22px; text-align:center; margin-bottom: 15px;">Welcome to Boards Reviewer! 🧠</h3>
+    <h3 style="margin-top:0; color:var(--text); font-size:22px; text-align:center; margin-bottom: 15px;">Welcome to Boards Drill Builder! 🧠</h3>
     <p style="font-size:14px; color:var(--text-light); text-align:center; margin-top:0; margin-bottom:18px;">A premium suite for mastering exams and constructing personal test prep banks.</p>
 
     <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
@@ -941,7 +941,7 @@
     <button class="btn-outline" onclick="openSettingsModal()" title="App Preferences" style="position: absolute; top: 20px; left: 20px; width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; padding:0; transition: all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); min-width:32px; max-width:32px; flex-shrink:0; line-height: 1; z-index: 10;">⚙️</button>
     <button class="btn-outline btn-small" id="authCloseBtn" style="position: absolute; top: 20px; right: 20px; border:none; padding:4px; font-size:16px; background:transparent; z-index: 10;" onclick="closeAuthModal()">✖</button>
     
-    <h2 style="text-align:center; color:var(--primary); margin-top:0;">Boards Reviewer</h2><p style="text-align:center; color:var(--text-light); font-size:14px; margin-top:-10px; margin-bottom:20px;">Master your concepts anywhere.</p>
+    <h2 style="text-align:center; color:var(--primary); margin-top:0;">Boards Drill Builder</h2><p style="text-align:center; color:var(--text-light); font-size:14px; margin-top:-10px; margin-bottom:20px;">Master your concepts anywhere.</p>
     <div id="authForms">
         <div id="guestSyncBanner" style="display:none; background:rgba(245, 158, 11, 0.1); border:1px solid #F59E0B; border-radius:10px; padding:12px 15px; margin-bottom:15px; text-align:left;">
           <span style="font-size:13px; font-weight:700; color:#D97706; display:flex; align-items:center; gap:6px;">✨ Playing as Guest</span>
@@ -1148,7 +1148,7 @@
 </div>
 
 <div class="container" id="mainAppView" style="display:none;">
-  <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;"><h1 id="mainQuizTitle" style="margin:0;">Boards Reviewer</h1><button id="editRoomInfoBtn" class="btn-outline btn-small" style="display:none; padding: 4px 8px; border:none;" onclick="openEditRoomModal()" title="Edit Room Title & Details">✏️</button></div>
+  <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;"><h1 id="mainQuizTitle" style="margin:0;">Boards Drill Builder</h1><button id="editRoomInfoBtn" class="btn-outline btn-small" style="display:none; padding: 4px 8px; border:none;" onclick="openEditRoomModal()" title="Edit Room Title & Details">✏️</button></div>
   <div class="global-header"><div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 450px;"><select id="subjectSelect" onchange="loadSubjectData()" style="flex: 1;"></select><button class="btn-outline btn-small" onclick="openCategoryModal()" title="Manage Categories" style="padding: 10px 15px; border: 1px solid var(--border);" id="editCategoriesBtn">⚙️</button></div><div id="statusBadge" class="status-badge">0 Questions in Bank</div></div>
   <div class="tabs-wrapper" id="quizTabsWrapper" style="margin-bottom: 20px;">
     <button class="tab-arrow-btn left" onclick="scrollTabs('quizTabs', -100)">◀</button>
@@ -1529,7 +1529,7 @@ async function getRoomsData(username, sessionToken) {
   if (!rooms['GLOBAL']) {
     rooms['GLOBAL'] = {
       name: "Global Master Bank",
-      quizTitle: "Boards Reviewer",
+      quizTitle: "Boards Drill Builder",
       description: "The core default question bank.",
       creator: "Admin",
       isPublic: true,
@@ -2095,7 +2095,7 @@ const backend = {
       if (docKey === 'GLOBAL') {
         const globalData = {
           name: "Global Master Bank",
-          quizTitle: "Boards Reviewer",
+          quizTitle: "Boards Drill Builder",
           description: "The core default question bank.",
           creator: "admin",
           isPublic: true,
@@ -2355,7 +2355,7 @@ const backend = {
           subject: subject,
           tag: "Guide Overview",
           displayItemNumber: 1,
-          text: "Welcome to Boards Reviewer! How do you select study modes and start a session?",
+          text: "Welcome to Boards Drill Builder! How do you select study modes and start a session?",
           correct: "b",
           options: [
             { letter: "a", text: "Toggle settings, choose a mode (Study Mode vs. Review Mistakes), and start typing." },
@@ -2385,7 +2385,7 @@ const backend = {
           subject: subject,
           tag: "Theme Engine",
           displayItemNumber: 3,
-          text: "How can you customize the look and feel of Boards Reviewer to make it visual and modern?",
+          text: "How can you customize the look and feel of Boards Drill Builder to make it visual and modern?",
           options: [
             { letter: "a", text: "Upload a CSS stylesheet file." },
             { letter: "b", text: "Double-click the screen background." },
@@ -2393,7 +2393,7 @@ const backend = {
             { letter: "d", text: "Colors are fixed and cannot be changed." }
           ],
           correct: "c",
-          rationale: "Boards Reviewer features a fully dynamic, custom theme engine! By clicking the 🎨 color palette icon, you can drag the Hue, Saturation, and Lightness sliders to create any custom color theme. You can also toggle Dark Mode 🌙 with the sun/moon icon for maximum aesthetic comfort."
+          rationale: "Boards Drill Builder features a fully dynamic, custom theme engine! By clicking the 🎨 color palette icon, you can drag the Hue, Saturation, and Lightness sliders to create any custom color theme. You can also toggle Dark Mode 🌙 with the sun/moon icon for maximum aesthetic comfort."
         },
         {
           id: "tutorial_4",
@@ -2423,7 +2423,7 @@ const backend = {
             { letter: "d", text: "Privacy mode only hides emails, not usernames." }
           ],
           correct: "b",
-          rationale: "Boards Reviewer takes privacy extremely seriously! If you check 'Hide Username' under settings, your name is completely replaced by 'Private Member' for other students and even the Room Host. The platform Admin is the only one who can see full usernames for security management."
+          rationale: "Boards Drill Builder takes privacy extremely seriously! If you check 'Hide Username' under settings, your name is completely replaced by 'Private Member' for other students and even the Room Host. The platform Admin is the only one who can see full usernames for security management."
         }
       ];
       
@@ -2762,10 +2762,10 @@ const backend = {
           "Accept": "application/json"
         },
         body: JSON.stringify({
-          _subject: `[Boards Reviewer] Security Verification OTP for ${actionType}`,
+          _subject: `[Boards Drill Builder] Security Verification OTP for ${actionType}`,
           "Verification Code": otp,
           "Action Requested": `Change ${actionType} to: ${targetValue}`,
-          "Important Notice": "Please verify your ownership by entering this code on Boards Reviewer.",
+          "Important Notice": "Please verify your ownership by entering this code on Boards Drill Builder.",
           _honey: "", // Honeypot spam protector
           _template: "box"
         })
@@ -3825,7 +3825,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function toggleNewRoomPassword(isPublic) { const passWrapper = document.getElementById('newRoomPassWrapper'); if (isPublic) { passWrapper.style.display = 'none'; } else { passWrapper.style.display = 'block'; } }
   function toggleRoomPrivacy(roomId) {
   if (roomId === 'GLOBAL' && !isAdmin) {
-    customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+    customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
     return;
   }
   const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } executeTogglePrivacy(roomId, pass.trim()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { executeTogglePrivacy(roomId, ""); }); } }
@@ -3907,7 +3907,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function loadRoomIntoMainApp(roomId) { 
     currentRoomId = roomId; 
     localStorage.setItem('psych_current_room', currentRoomId); 
-    document.getElementById('mainQuizTitle').innerText = allRooms[currentRoomId].quizTitle || allRooms[currentRoomId].name || "Boards Reviewer"; 
+    document.getElementById('mainQuizTitle').innerText = allRooms[currentRoomId].quizTitle || allRooms[currentRoomId].name || "Boards Drill Builder"; 
     document.getElementById('dashboardView').style.display = 'none'; 
     document.getElementById('mainAppView').style.display = 'block'; 
     document.getElementById('navDashBtn').style.display = 'inline-block'; 
@@ -3955,7 +3955,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
         if (!doc.exists && roomId.toUpperCase() === 'GLOBAL') {
           const globalData = {
             name: "Global Master Bank",
-            quizTitle: "Boards Reviewer",
+            quizTitle: "Boards Drill Builder",
             description: "The core default question bank.",
             creator: "admin",
             isPublic: true,
@@ -4036,7 +4036,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function togglePrivacyFromModal() {
     const roomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room');
     if (roomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const room = allRooms[roomId]; if(!room) return; if (room.isPublic) { customPrompt("Make Private", "Enter a password to protect this room:", "text", (pass) => { if(pass === null) return; if(pass.trim() === '') { customAlert("Error", "Password cannot be empty."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, pass.trim(), getSessionToken()); }); } else { customConfirm("Make Public", `Make '${room.name}' visible to everyone? Password will be removed.`, () => { showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; const activeTab = document.querySelector('.auth-tab.active'); if(activeTab) switchRoomTab(activeTab.id === 'tabMyRooms' ? 'my' : (activeTab.id === 'tabPublicRooms' ? 'public' : 'joined')); setupEditRoomModal(roomId); customAlert("Success", res.msg); } else customAlert("Error", res.msg); }).toggleRoomPrivacyDB(roomId, currentUser, "", getSessionToken()); }); } }
@@ -4044,7 +4044,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function submitEditRoom() {
     const editRoomId = document.getElementById('editRoomModalOverlay').getAttribute('data-editing-room') || currentRoomId;
     if (editRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       closeEditRoomModal();
       return;
     }
@@ -4165,28 +4165,28 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function closeCategoryModal() { document.getElementById('categoryModalOverlay').style.display = 'none'; }
   function addNewCategory() {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const newCat = document.getElementById('newCategoryInput').value.trim(); if(!newCat) { customAlert("Wait", "Category name cannot be empty."); return; } let cats = allRooms[currentRoomId].categories || []; if(cats.includes(newCat)) { customAlert("Error", "A category with that name already exists."); return; } let newCats = [...cats, newCat]; document.getElementById('newCategoryInput').value = ''; saveCategories(newCats, newCat + " category added!");
   }
   function removeCategory(catName) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     if ((allRooms[currentRoomId].categories || []).length <= 1) { customAlert("Error", "Cannot delete the last category."); return; } customConfirm("Delete Category", `Are you sure you want to delete '${catName}' and ALL its questions?`, () => { let cats = (allRooms[currentRoomId].categories || []).filter(c => c !== catName); showLoader(true); google.script.run.withSuccessHandler(() => { saveCategories(cats, catName + " category deleted."); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Failed to clear database for category: " + err.message); }).clearDatabase(currentRoomId, catName, currentUser, getSessionToken()); });
   }
   function renameCategoryPrompt(oldName) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     customPrompt("Rename Category", `Enter new name for '${oldName}':`, "text", (newName) => { if (newName === null || newName === undefined) return; newName = newName.trim(); if (newName === "") { customAlert("Error", "Category name cannot be empty."); return; } if (newName === oldName) { customAlert("Notice", "You entered the exact same name. No changes made."); return; } showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); openCategoryModal(); customAlert("Success", "Category successfully renamed to: " + newName); loadSubjectData(); } else { customAlert("Error", "Database Error: " + res.msg); } }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).renameCategoryDB(currentRoomId, oldName, newName, currentUser, getSessionToken()); });
   }
   function saveCategories(cats, msg) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     showLoader(true); google.script.run.withSuccessHandler(res => { showLoader(false); if(res.success) { allRooms = res.rooms; populateSubjectDropdown(); loadSubjectData(); openCategoryModal(); if(msg) customAlert("Success", msg); } else customAlert("Error", res.msg); }).withFailureHandler(err => { showLoader(false); customAlert("Error", "Server Error: " + err.message); }).updateRoomCategories(currentRoomId, cats, currentUser, getSessionToken());
@@ -4295,7 +4295,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function renameTagPromptInModal(oldTag) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     customPrompt("Rename Group Tag", `Enter new name for '${oldTag}' globally:`, "text", (newTag) => {
@@ -4329,7 +4329,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function saveTagsOrderAction() {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       closeManageTagsModal();
       return;
     }
@@ -4896,7 +4896,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function saveToServer(callback) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
       showLoader(false);
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       if (callback) callback();
       return;
     }
@@ -5427,7 +5427,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
     const roomData = allRooms[currentRoomId];
     const titleEl = document.getElementById('mainQuizTitle');
     if (titleEl && roomData) {
-      titleEl.innerText = roomData.quizTitle || roomData.name || "Boards Reviewer";
+      titleEl.innerText = roomData.quizTitle || roomData.name || "Boards Drill Builder";
     }
     const editBtn = document.getElementById('editRoomInfoBtn');
     if (editBtn && roomData) {
@@ -5626,7 +5626,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
   function updateSingleAnswerDropdown() { const select = document.getElementById('singleAns'); const currentVal = select.value; select.innerHTML = ''; const optInputs = document.querySelectorAll('.single-opt-input'); optInputs.forEach(input => { const letter = input.getAttribute('data-letter'); const opt = document.createElement('option'); opt.value = letter; opt.innerText = letter.toUpperCase(); select.appendChild(opt); }); if(select.querySelector(`option[value="${currentVal}"]`)) select.value = currentVal; }
   function saveSingleQuestion() {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const select = document.getElementById('addTagSelect'); 
@@ -5726,7 +5726,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function parseAndAdd() {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const select = document.getElementById('addTagSelect');
@@ -5763,7 +5763,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   async function handleJsonImport(file) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     if (!file) return;
@@ -6737,7 +6737,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function setUserPermissionAction(targetUser, role) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       renderPermissionsTab();
       return;
     }
@@ -6758,7 +6758,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function removeUserFromRoomAction(targetUser) {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const room = allRooms[currentRoomId];
@@ -6784,7 +6784,7 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
 
   function addUserToRoomAction() {
     if (currentRoomId === 'GLOBAL' && !isAdmin) {
-      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Reviewer! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
+      customAlert("Tutorial Room", "This is a shared read-only Tutorial Room designed for everyone to learn and explore the features of Boards Drill Builder! To add your own questions, manage categories, or invite custom users, please create your own private or public room from the Dashboard.");
       return;
     }
     const input = document.getElementById('addPermissionUsername');
