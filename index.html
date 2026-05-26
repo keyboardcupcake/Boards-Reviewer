@@ -2656,16 +2656,20 @@ const backend = {
       if (room.privacy) delete room.privacy[targetLower];
       await docRef.update({ permissions: room.permissions, lastActive: room.lastActive || {}, privacy: room.privacy || {} });
       
-      const mappingDoc = await db.collection('usernames').doc(targetLower).get();
-      if (mappingDoc.exists) {
-        const uid = mappingDoc.data().uid;
-        const userRef = db.collection('users').doc(uid);
-        const userSnap = await userRef.get();
-        if (userSnap.exists) {
-          let joined = userSnap.data().joinedRooms || ['GLOBAL'];
-          joined = joined.filter(id => id !== roomId.toUpperCase());
-          await userRef.update({ joinedRooms: joined });
+      try {
+        const mappingDoc = await db.collection('usernames').doc(targetLower).get();
+        if (mappingDoc.exists) {
+          const uid = mappingDoc.data().uid;
+          const userRef = db.collection('users').doc(uid);
+          const userSnap = await userRef.get();
+          if (userSnap.exists) {
+            let joined = userSnap.data().joinedRooms || ['GLOBAL'];
+            joined = joined.filter(id => id !== roomId.toUpperCase());
+            await userRef.update({ joinedRooms: joined });
+          }
         }
+      } catch (err) {
+        console.warn("Could not silently update target user's joinedRooms profile during permission change (expected under Firestore security rules):", err);
       }
     }
     
@@ -2700,14 +2704,18 @@ const backend = {
     if (!docSnap.exists) return { success: false, msg: "Room not found." };
     const room = docSnap.data();
     
-    const userRef = db.collection('users').doc(uid);
-    const userSnap = await userRef.get();
-    if (userSnap.exists) {
-      let joined = userSnap.data().joinedRooms || ['GLOBAL'];
-      if (!joined.includes(docKey)) {
-        joined.push(docKey);
-        await userRef.update({ joinedRooms: joined });
+    try {
+      const userRef = db.collection('users').doc(uid);
+      const userSnap = await userRef.get();
+      if (userSnap.exists) {
+        let joined = userSnap.data().joinedRooms || ['GLOBAL'];
+        if (!joined.includes(docKey)) {
+          joined.push(docKey);
+          await userRef.update({ joinedRooms: joined });
+        }
       }
+    } catch (err) {
+      console.warn("Could not silently update target user's joinedRooms profile during add operation (expected under Firestore security rules):", err);
     }
     
     if (!room.permissions) room.permissions = {};
@@ -3097,6 +3105,23 @@ let currentQuestions = []; let filteredQs = []; let pendingQueue = []; let sessi
                 seenQuestions = res.progress || {}; 
                 currentUserJoinedRooms = res.joinedRooms || []; 
                 localStorage.setItem('psych_seen_questions', JSON.stringify(seenQuestions)); 
+                
+                // Self-healing: automatically add rooms the user has permission for (added by others) to their joinedRooms list
+                let joinedRoomsUpdated = false;
+                const safeUserLower = currentUser.toLowerCase();
+                for (const roomId in allRooms) {
+                  const room = allRooms[roomId];
+                  if (room && room.permissions && room.permissions[safeUserLower]) {
+                    if (!currentUserJoinedRooms.includes(roomId)) {
+                      currentUserJoinedRooms.push(roomId);
+                      joinedRoomsUpdated = true;
+                    }
+                  }
+                }
+                if (joinedRoomsUpdated && auth.currentUser) {
+                  db.collection('users').doc(auth.currentUser.uid).update({ joinedRooms: currentUserJoinedRooms })
+                    .catch(err => console.warn("Failed to auto-save self-healed joinedRooms:", err));
+                } 
                 
                 // Clear any cached local active session states if they were wiped on the server!
                 Object.keys(localStorage).forEach(key => {
